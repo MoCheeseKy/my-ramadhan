@@ -144,10 +144,6 @@ export default function QuranIndex() {
   // ─── View: Home (daftar surah/juz) ────────────────────────────────────────────
   return (
     <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 pb-20 selection:bg-blue-200 dark:selection:bg-blue-800'>
-      <Head>
-        <title>Al-Qur'an - MyRamadhan</title>
-      </Head>
-
       {/* Header sticky dengan search & tab */}
       <header className='sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800'>
         <div className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-6 py-4'>

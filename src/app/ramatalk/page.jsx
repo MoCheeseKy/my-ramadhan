@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 import {
@@ -30,6 +30,7 @@ const RAMATALK_MODES = [
 
 export default function RamatalkPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -41,7 +42,7 @@ export default function RamatalkPage() {
   useEffect(() => {
     if (!router.isReady) return;
 
-    const { mode, q } = useParams();;
+    const { mode, q } = useParams();
 
     if (mode && RAMATALK_MODES.find((m) => m.id === mode)) {
       setActiveMode(mode);
@@ -50,7 +51,7 @@ export default function RamatalkPage() {
     if (q) {
       setInput(q);
     }
-  }, [router.isReady, useParams();]);
+  }, [searchParams]);
 
   useEffect(() => {
     const savedContext = sessionStorage.getItem('ramatalk_journal_context');
@@ -147,7 +148,6 @@ export default function RamatalkPage() {
   return (
     <ProtectedRoute>
       <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 flex flex-col text-slate-800 dark:text-slate-100'>
-
         {/* Header */}
         <header className='bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-4 py-3 sticky top-0 z-40 flex items-center gap-3'>
           <button

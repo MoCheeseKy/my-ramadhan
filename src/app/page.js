@@ -39,7 +39,6 @@ dayjs.extend(duration);
  * Bertugas mengoordinasikan seluruh state global untuk dashboard harian
  */
 export default function MyRamadhanHome() {
-  const router = useRouter();
   const { user } = useUser();
 
   const [mounted, setMounted] = useState(false);

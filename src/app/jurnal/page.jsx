@@ -185,10 +185,6 @@ export default function JournalDashboard() {
   return (
     <ProtectedRoute>
       <div className='min-h-screen bg-[#FAFAF7] dark:bg-slate-950 text-slate-800 dark:text-slate-200 pb-28 transition-colors duration-300'>
-        <Head>
-          <title>Jurnal Refleksi - MyRamadhan</title>
-        </Head>
-
         <div className='fixed inset-0 pointer-events-none -z-10'>
           <div className='absolute top-0 right-0 w-80 h-80 bg-violet-100/40 dark:bg-violet-900/20 rounded-full blur-3xl' />
           <div className='absolute bottom-0 left-0 w-96 h-96 bg-blue-100/30 dark:bg-blue-900/20 rounded-full blur-3xl' />
