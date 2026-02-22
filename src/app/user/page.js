@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Head from 'next/head';
-import { useRouter, useParams } from 'next/navigation';
+
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, LogOut, LogIn } from 'lucide-react';
 
 import useUser from '@/hooks/useUser';
@@ -79,10 +79,6 @@ export default function UserProfile() {
 
   return (
     <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 pb-24 transition-colors duration-300'>
-      <Head>
-        <title>Profil Saya - MyRamadhan</title>
-      </Head>
-
       {/* Header sticky */}
       <header className='sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-4'>
         <div className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto flex items-center gap-3 w-full'>

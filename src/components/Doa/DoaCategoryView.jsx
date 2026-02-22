@@ -1,6 +1,5 @@
 'use client';
 
-import Head from 'next/head';
 import { useState, useMemo } from 'react';
 import {
   ArrowLeft,
@@ -107,10 +106,6 @@ const DoaCategoryView = ({
 
   return (
     <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-24 selection:bg-rose-200 dark:selection:bg-rose-900'>
-      <Head>
-        <title>{category.title} - MyRamadhan</title>
-      </Head>
-
       {/* ── HEADER STICKY ── */}
       <header className='sticky top-0 z-40 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-700 px-5 py-3 shadow-sm'>
         <div className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto'>

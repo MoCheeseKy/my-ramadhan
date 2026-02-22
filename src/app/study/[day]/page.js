@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Head from 'next/head';
 import { ArrowLeft, Clock, Tag, Share2, CheckCircle } from 'lucide-react';
 import { studyMaterials } from '@/data/studyMaterials'; // Import data
 
@@ -36,10 +35,6 @@ export default function StudyDetail() {
 
   return (
     <div className='min-h-screen bg-white pb-20 selection:bg-amber-100'>
-      <Head>
-        <title>{material.title} - MyRamadhan</title>
-      </Head>
-
       {/* --- HEADER IMAGE & NAV --- */}
       <div className='relative h-64 bg-indigo-900 rounded-b-[3rem] overflow-hidden shadow-xl shadow-indigo-100'>
         {/* Abstract Background Decoration */}

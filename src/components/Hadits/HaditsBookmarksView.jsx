@@ -1,6 +1,5 @@
 'use client';
 
-import Head from 'next/head';
 import { ArrowLeft, Bookmark } from 'lucide-react';
 
 /**
@@ -13,10 +12,6 @@ import { ArrowLeft, Bookmark } from 'lucide-react';
  */
 const HaditsBookmarksView = ({ bookmarks, onRemoveBookmark, onBack }) => (
   <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-20'>
-    <Head>
-      <title>Hadits Disimpan - MyRamadhan</title>
-    </Head>
-
     {/* Header */}
     <header className='sticky top-0 z-40 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-700 px-6 py-4'>
       <div className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto flex items-center gap-3'>

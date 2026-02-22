@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import Head from 'next/head';
 import { useRouter, useParams } from 'next/navigation';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -146,9 +145,6 @@ export default function RamatalkPage() {
   return (
     <ProtectedRoute>
       <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 flex flex-col text-slate-800 dark:text-slate-100'>
-        <Head>
-          <title>Ramatalk AI</title>
-        </Head>
 
         {/* Header */}
         <header className='bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-4 py-3 sticky top-0 z-40 flex items-center gap-3'>

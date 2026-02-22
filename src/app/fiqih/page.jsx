@@ -1,7 +1,6 @@
 'use client';
 
-import Head from 'next/head';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Scale, Search, X } from 'lucide-react';
 
 import { useFiqihData } from '@/hooks/useFiqihData';
@@ -29,10 +28,6 @@ export default function FiqihPage() {
 
   return (
     <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-24 selection:bg-amber-200 dark:selection:bg-amber-900'>
-      <Head>
-        <title>Fiqih Ramadhan - MyRamadhan</title>
-      </Head>
-
       {/* Header */}
       <header className='sticky top-0 z-40 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-700 px-5 py-3'>
         <div className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto'>

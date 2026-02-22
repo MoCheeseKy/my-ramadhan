@@ -1,6 +1,7 @@
+'use client';
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import Head from 'next/head';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, MapPin, Navigation, RefreshCw } from 'lucide-react';
 
@@ -260,10 +261,6 @@ export default function KompasPage() {
 
   return (
     <div className='min-h-screen bg-[#0a0f1e] text-white flex flex-col overflow-hidden selection:bg-emerald-500/30'>
-      <Head>
-        <title>Arah Kiblat — MyRamadhan</title>
-      </Head>
-
       <div className='fixed inset-0 pointer-events-none'>
         <div className='absolute top-[-20%] left-[-20%] w-[600px] h-[600px] bg-emerald-900/30 rounded-full blur-[120px]' />
         <div className='absolute bottom-[-20%] right-[-20%] w-[500px] h-[500px] bg-indigo-900/20 rounded-full blur-[120px]' />

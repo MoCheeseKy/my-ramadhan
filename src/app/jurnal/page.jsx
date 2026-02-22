@@ -1,6 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import Head from 'next/head';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,

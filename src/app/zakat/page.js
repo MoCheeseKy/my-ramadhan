@@ -1,7 +1,6 @@
 'use client';
 
-import Head from 'next/head';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -27,10 +26,6 @@ export default function ZakatPage() {
 
   return (
     <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 text-slate-800 dark:text-slate-200 pb-24 transition-colors duration-300'>
-      <Head>
-        <title>Kalkulator Zakat — MyRamadhan</title>
-      </Head>
-
       {/* Ambient background blur */}
       <div className='fixed inset-0 pointer-events-none -z-10 overflow-hidden'>
         <div className='absolute -top-40 -right-40 w-96 h-96 bg-blue-100/40 dark:bg-blue-900/20 rounded-full blur-3xl' />

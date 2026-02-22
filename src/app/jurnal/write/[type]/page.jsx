@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Head from 'next/head';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -152,10 +151,6 @@ export default function WriteJournal() {
 
   return (
     <div className='min-h-screen bg-[#FAFAF7] dark:bg-slate-950 flex flex-col transition-colors duration-300'>
-      <Head>
-        <title>{catData.title} — MyRamadhan</title>
-      </Head>
-
       <div className='fixed inset-0 pointer-events-none -z-10 overflow-hidden'>
         <div
           className={`absolute -top-32 -right-32 w-80 h-80 bg-gradient-to-br ${style.light} rounded-full blur-3xl opacity-80`}

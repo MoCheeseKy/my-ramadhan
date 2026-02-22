@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
+
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, EyeOff } from 'lucide-react';
 
@@ -134,10 +134,6 @@ export default function SurahReader() {
       className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 text-slate-800 dark:text-slate-200 selection:bg-blue-200 dark:selection:bg-blue-800 transition-colors duration-300'
       style={{ paddingBottom: showPlayer ? '160px' : '100px' }}
     >
-      <Head>
-        <title>{surah?.namaLatin || 'Membaca'} - MyRamadhan</title>
-      </Head>
-
       {/* Header sticky */}
       <SurahHeader
         surah={surah}

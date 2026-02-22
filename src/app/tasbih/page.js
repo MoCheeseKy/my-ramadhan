@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Head from 'next/head';
-import { useRouter, useParams } from 'next/navigation';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -116,10 +115,6 @@ export default function TasbihPage() {
 
   return (
     <div className='min-h-screen bg-[#F0F5FA] dark:bg-slate-950 text-slate-800 dark:text-slate-200 pb-10 flex flex-col overflow-hidden relative selection:bg-teal-200 dark:selection:bg-teal-900 transition-colors duration-300'>
-      <Head>
-        <title>Tasbih Digital - MyRamadhan</title>
-      </Head>
-
       {/* --- BACKGROUND AMBIENT (Glow Effect) - Disesuaikan untuk dark mode --- */}
       <div className='fixed inset-0 pointer-events-none'>
         <div

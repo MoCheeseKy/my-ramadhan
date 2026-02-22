@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
-import { useRouter, useParams } from 'next/navigation';
+
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Droplets } from 'lucide-react';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -84,10 +84,6 @@ export default function HaidTrackerPage() {
   return (
     <ProtectedRoute>
       <div className='min-h-screen bg-[#FDF2F8] dark:bg-slate-950 text-slate-800 dark:text-slate-200 pb-28 selection:bg-pink-200 dark:selection:bg-pink-900 transition-colors duration-300'>
-        <Head>
-          <title>Haid Tracker - MyRamadhan</title>
-        </Head>
-
         {/* Header */}
         <header className='sticky top-0 z-40 px-6 py-4 flex items-center justify-between bg-[#FDF2F8]/80 dark:bg-slate-900/80 backdrop-blur-md'>
           <div className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto flex justify-between items-center w-full'>

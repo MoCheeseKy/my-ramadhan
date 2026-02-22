@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Head from 'next/head';
 import { EyeOff } from 'lucide-react';
 import { HADITS_PER_PAGE } from '@/components/Hadits/Constants';
 import HaditsReaderHeader from '@/components/Hadits/HaditsReaderHeader';
@@ -63,10 +62,6 @@ const HaditsReadView = ({
 
   return (
     <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-24 selection:bg-emerald-200 dark:selection:bg-emerald-900 transition-colors duration-300'>
-      <Head>
-        <title>{book?.name} - MyRamadhan</title>
-      </Head>
-
       {/* Header sticky */}
       <HaditsReaderHeader
         book={book}
