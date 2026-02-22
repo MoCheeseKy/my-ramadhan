@@ -25,11 +25,9 @@ export default function useTrackerSummary() {
       const haidLogs = (await localforage.getItem('haid_logs')) || [];
 
       const today = dayjs();
-      const currentYear = today.year();
-      const ramadhanStart = dayjs(`${currentYear}-02-19`);
-      const ramadhanEnd = ramadhanStart.add(29, 'day');
+      const ramadhanStart = dayjs('2026-02-19');
+      const ramadhanEnd = dayjs('2026-03-20');
 
-      // --- 1. Kalkulasi Hutang Puasa karena Haid ---
       let haidMissedFasts = 0;
       haidLogs.forEach((log) => {
         if (log.start_date) {
@@ -38,14 +36,13 @@ export default function useTrackerSummary() {
             ? dayjs(log.end_date).endOf('day')
             : today.endOf('day');
 
-          // Cek setiap hari di Ramadhan, apakah bertabrakan dengan masa haid
-          for (let i = 0; i < 30; i++) {
+          for (let i = 0; i <= ramadhanEnd.diff(ramadhanStart, 'day'); i++) {
             const rDay = ramadhanStart.add(i, 'day');
             const isPassed =
               rDay.isBefore(today, 'day') || rDay.isSame(today, 'day');
             const isMenstruating =
-              (rDay.isAfter(start) || rDay.isSame(start, 'day')) &&
-              (rDay.isBefore(end) || rDay.isSame(end, 'day'));
+              (rDay.isAfter(start, 'day') || rDay.isSame(start, 'day')) &&
+              (rDay.isBefore(end, 'day') || rDay.isSame(end, 'day'));
 
             if (isPassed && isMenstruating) {
               haidMissedFasts++;
@@ -54,16 +51,18 @@ export default function useTrackerSummary() {
         }
       });
 
-      // --- 2. Kalkulasi Summary Keseluruhan ---
       let puasaCompleted = 0;
       let tarawihCompleted = 0;
       let quranCompleted = 0;
       let sholatJamaah = 0;
-
       let daysPassed = 0;
-      if (today.isAfter(ramadhanStart)) {
-        if (today.isAfter(ramadhanEnd)) {
-          daysPassed = 30;
+
+      if (
+        today.isAfter(ramadhanStart, 'day') ||
+        today.isSame(ramadhanStart, 'day')
+      ) {
+        if (today.isAfter(ramadhanEnd, 'day')) {
+          daysPassed = ramadhanEnd.diff(ramadhanStart, 'day') + 1;
         } else {
           daysPassed = today.diff(ramadhanStart, 'day') + 1;
         }
@@ -78,7 +77,7 @@ export default function useTrackerSummary() {
         }
       });
 
-      let missedFasts = daysPassed - puasaCompleted;
+      let missedFasts = daysPassed - puasaCompleted - haidMissedFasts;
       if (missedFasts < 0) missedFasts = 0;
 
       setSummary({
@@ -91,7 +90,6 @@ export default function useTrackerSummary() {
         sholatJamaah,
       });
 
-      // --- 3. Kalkulasi Daily Progress (Untuk Home) ---
       const todayStr = today.format('YYYY-MM-DD');
       const todayData = trackerData[todayStr] || {};
 
@@ -114,12 +112,13 @@ export default function useTrackerSummary() {
       });
 
       customHabits.forEach((habit) => {
-        if (todayData.custom_habits?.[habit.id]) completed++;
+        if (todayData.custom_progress?.[habit.id]) completed++;
       });
 
       setTaskProgress({ completed, total });
     } catch (error) {
       console.error(error);
+      setTaskProgress({ completed: 0, total: 9 });
     } finally {
       setLoading(false);
     }
@@ -127,6 +126,13 @@ export default function useTrackerSummary() {
 
   useEffect(() => {
     fetchTrackerSummary();
+    const handleProfileUpdate = () => {
+      fetchTrackerSummary();
+    };
+    window.addEventListener('user_profile_updated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('user_profile_updated', handleProfileUpdate);
+    };
   }, [fetchTrackerSummary]);
 
   return { summary, taskProgress, loading, fetchTrackerSummary };

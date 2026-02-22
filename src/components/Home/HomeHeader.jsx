@@ -2,11 +2,8 @@
 
 import { Bell, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
-/**
- * HomeHeader — bagian atas halaman Home.
- * Menampilkan salam, tanggal hijriah, ikon notifikasi, dan avatar user.
- */
 const HomeHeader = ({
   user,
   hijriDate,
@@ -24,14 +21,13 @@ const HomeHeader = ({
         <h1 className='text-2xl md:text-3xl lg:text-3xl font-extrabold tracking-tight mt-2 leading-tight'>
           {"Assalamu'alaikum"} <br />
           <span className='text-[#1e3a8a] dark:text-blue-400'>
-            {user?.username || 'Sahabat!'}
+            {user?.name || 'Sahabat!'}
           </span>{' '}
           👋
         </h1>
       </div>
 
       <div className='flex gap-4 md:gap-5 items-center'>
-        {/* Bell notification dengan badge unread */}
         <div
           className='relative cursor-pointer hover:scale-110 transition-transform flex items-center justify-center'
           onClick={onOpenNotification}
@@ -45,19 +41,21 @@ const HomeHeader = ({
           )}
         </div>
 
-        {/* Avatar / login button */}
-        <div className='w-11 h-11 md:w-14 md:h-14 lg:w-14 lg:h-14 rounded-full bg-white dark:bg-slate-800 shadow-md border border-slate-100 dark:border-slate-700 flex items-center justify-center text-xl hover:scale-105 transition-transform'>
-          {user ? (
-            <User
-              size={20}
-              className='text-[#1e3a8a] dark:text-blue-400 cursor-pointer md:w-6 md:h-6 lg:w-6 lg:h-6'
-              onClick={() => router.push('/user')}
+        <div
+          onClick={() => router.push('/user')}
+          className='w-11 h-11 md:w-14 md:h-14 lg:w-14 lg:h-14 rounded-full bg-white dark:bg-slate-800 shadow-md border border-slate-100 dark:border-slate-700 flex items-center justify-center text-xl hover:scale-105 transition-transform cursor-pointer overflow-hidden relative'
+        >
+          {user?.avatar ? (
+            <Image
+              src={user.avatar}
+              alt='Avatar'
+              fill
+              className='object-cover'
             />
           ) : (
             <User
               size={20}
-              className='text-emerald-500 cursor-pointer md:w-6 md:h-6 lg:w-6 lg:h-6'
-              onClick={() => router.push('/user')}
+              className='text-[#1e3a8a] dark:text-blue-400 md:w-6 md:h-6 lg:w-6 lg:h-6'
             />
           )}
         </div>

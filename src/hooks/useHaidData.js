@@ -1,159 +1,147 @@
-import { useState, useEffect } from 'react';
+'use client';
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import localforage from 'localforage';
 import dayjs from 'dayjs';
-import {
-  RAMADHAN_START,
-  RAMADHAN_END,
-} from '@/components/HaidTracker/Constants';
 
-/**
- * Mengelola semua operasi data haid: fetch, tambah, update, dan delete.
- * Data di-sync via P2P untuk multi-device
- */
-export function useHaidData(user, isPWA) {
-  const [loading, setLoading] = useState(true);
+export function useHaidData() {
   const [logs, setLogs] = useState([]);
-  const [activePeriod, setActivePeriod] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Load data dari localforage (berlaku untuk PWA dan Web mode)
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
+  const HAID_KEY = 'haid_logs';
 
-  const fetchData = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      // Semua data disimpan di localforage dengan key yang user-specific
-      const storageKey = `haid_logs_${user?.personal_code || 'local'}`;
-      const localHaid = (await localforage.getItem(storageKey)) || [];
-
-      setLogs(localHaid);
-      setActivePeriod(localHaid.find((item) => item.end_date === null) || null);
+      const data = (await localforage.getItem(HAID_KEY)) || [];
+      const sorted = data.sort(
+        (a, b) => new Date(b.start_date) - new Date(a.start_date),
+      );
+      setLogs(sorted);
     } catch (error) {
-      console.error('Error fetching haid data from localforage:', error);
-      setLogs([]);
-      setActivePeriod(null);
+      console.error('Gagal memuat data haid lokal:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, []);
 
-  /** Menyimpan tanggal mulai atau selesai siklus */
-  const saveDate = async (actionType, inputDate) => {
-    if (!user) return { success: false };
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
+  const saveDate = async (type, date) => {
     try {
-      const storageKey = `haid_logs_${user.personal_code || 'local'}`;
-      const localHaid = (await localforage.getItem(storageKey)) || [];
+      const currentLogs = (await localforage.getItem(HAID_KEY)) || [];
+      let updatedLogs;
 
-      if (actionType === 'start') {
+      if (type === 'start') {
         const newLog = {
           id: Date.now().toString(),
-          start_date: inputDate,
+          start_date: date,
           end_date: null,
-          created_at: dayjs().toISOString(),
-          updated_at: dayjs().toISOString(),
         };
-        const updated = [newLog, ...localHaid];
-        await localforage.setItem(storageKey, updated);
-        setActivePeriod(newLog);
-        setLogs(updated);
-
-        // Trigger P2P sync event jika tersedia
-        if (typeof window !== 'undefined' && window.dispatchEvent) {
-          window.dispatchEvent(
-            new CustomEvent('haid_data_updated', {
-              detail: { type: 'start', data: newLog },
-            }),
-          );
+        updatedLogs = [newLog, ...currentLogs];
+      } else if (type === 'end') {
+        const activeIndex = currentLogs.findIndex((log) => !log.end_date);
+        if (activeIndex !== -1) {
+          updatedLogs = [...currentLogs];
+          updatedLogs[activeIndex] = {
+            ...updatedLogs[activeIndex],
+            end_date: date,
+          };
+        } else {
+          return {
+            success: false,
+            error: 'Tidak ada siklus aktif yang bisa diakhiri.',
+          };
         }
-
-        return { success: true, type: 'start' };
       }
 
-      if (actionType === 'end' && activePeriod) {
-        const updated = localHaid.map((l) =>
-          l.id === activePeriod.id
-            ? {
-                ...l,
-                end_date: inputDate,
-                updated_at: dayjs().toISOString(),
-              }
-            : l,
-        );
-        await localforage.setItem(storageKey, updated);
-        setLogs(updated);
-        setActivePeriod(null);
+      const sorted = updatedLogs.sort(
+        (a, b) => new Date(b.start_date) - new Date(a.start_date),
+      );
 
-        // Trigger P2P sync event
-        if (typeof window !== 'undefined' && window.dispatchEvent) {
-          window.dispatchEvent(
-            new CustomEvent('haid_data_updated', {
-              detail: { type: 'end', data: updated[0] },
-            }),
-          );
-        }
+      await localforage.setItem(HAID_KEY, sorted);
+      setLogs(sorted);
 
-        return { success: true, type: 'end' };
-      }
+      window.dispatchEvent(new Event('user_profile_updated'));
+
+      return { success: true, type };
     } catch (error) {
-      console.error('Error saving date:', error);
+      return { success: false, error };
     }
-
-    return { success: false };
   };
 
-  /** Hapus log */
   const deleteLog = async (id) => {
     try {
-      const storageKey = `haid_logs_${user?.personal_code || 'local'}`;
-      const localHaid = (await localforage.getItem(storageKey)) || [];
+      const currentLogs = (await localforage.getItem(HAID_KEY)) || [];
+      const updatedLogs = currentLogs.filter((log) => log.id !== id);
 
-      const updated = localHaid.filter((l) => l.id !== id);
-      await localforage.setItem(storageKey, updated);
-      setLogs(updated);
+      await localforage.setItem(HAID_KEY, updatedLogs);
+      setLogs(updatedLogs);
 
-      // Trigger P2P sync event
-      if (typeof window !== 'undefined' && window.dispatchEvent) {
-        window.dispatchEvent(
-          new CustomEvent('haid_data_updated', {
-            detail: { type: 'delete', id },
-          }),
-        );
-      }
+      window.dispatchEvent(new Event('user_profile_updated'));
+
+      return { success: true };
     } catch (error) {
-      console.error('Error deleting log:', error);
+      return { success: false, error };
     }
   };
 
-  /** Hitung durasi siklus dalam hari */
-  const getDuration = (startDate) => {
+  // --- Helpers ---
+  const activePeriod = useMemo(() => {
+    return logs.find((log) => !log.end_date) || null;
+  }, [logs]);
+
+  const getDuration = useCallback((startDate) => {
     if (!startDate) return 0;
     return dayjs().diff(dayjs(startDate), 'day') + 1;
-  };
+  }, []);
 
-  /** Hitung jumlah hari qadha */
-  const getQadhaDays = (log) => {
-    if (!log.start_date || !log.end_date) return 0;
-    const diff = dayjs(log.end_date).diff(dayjs(log.start_date), 'day') + 1;
-    return Math.max(0, diff - 7); // Haid normal 7 hari
-  };
+  const getQadhaDays = useCallback((startDate, endDate) => {
+    if (!startDate) return 0;
 
-  /** Total hari puasa yang terlewat (qadha) */
-  const totalMissedFasting = logs.reduce((sum, log) => {
-    return sum + getQadhaDays(log);
-  }, 0);
+    // Rentang Ramadhan
+    const ramadhanStart = dayjs('2026-02-19');
+    const ramadhanEnd = dayjs('2026-03-20');
+    const start = dayjs(startDate).startOf('day');
+    const end = endDate ? dayjs(endDate).endOf('day') : dayjs().endOf('day');
+
+    let qadha = 0;
+
+    for (let i = 0; i <= ramadhanEnd.diff(ramadhanStart, 'day'); i++) {
+      const rDay = ramadhanStart.add(i, 'day');
+
+      if (rDay.isBefore(dayjs(), 'day') || rDay.isSame(dayjs(), 'day')) {
+        const isMenstruating =
+          (rDay.isAfter(start, 'day') || rDay.isSame(start, 'day')) &&
+          (rDay.isBefore(end, 'day') || rDay.isSame(end, 'day'));
+        if (isMenstruating) {
+          qadha++;
+        }
+      }
+    }
+    return qadha;
+  }, []);
+
+  const totalMissedFasting = useMemo(() => {
+    return logs.reduce(
+      (total, log) => total + getQadhaDays(log.start_date, log.end_date),
+      0,
+    );
+  }, [logs, getQadhaDays]);
+
+  const saveLog = saveDate;
 
   return {
-    loading,
     logs,
+    loading,
     activePeriod,
     saveDate,
+    saveLog,
     deleteLog,
     getDuration,
     getQadhaDays,
     totalMissedFasting,
-    refetchData: fetchData,
   };
 }
