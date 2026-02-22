@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -28,7 +28,7 @@ const RAMATALK_MODES = [
   { id: 'hadits', label: 'Cari Hadits', icon: ScrollText },
 ];
 
-export default function RamatalkPage() {
+export default function Ramatalk() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -286,6 +286,15 @@ export default function RamatalkPage() {
           </form>
         </div>
       </div>
+      <Suspense
+        fallback={
+          <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 flex items-center justify-center text-slate-500'>
+            Memuat asisten...
+          </div>
+        }
+      >
+        <RamatalkContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }
