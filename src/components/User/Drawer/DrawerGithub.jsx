@@ -27,10 +27,7 @@ const DrawerGithub = ({ open, onClose }) => (
 
       <button
         onClick={() => {
-          window.open(
-            'https://github.com/MoCheeseKy/my-ramadhan-app',
-            '_blank',
-          );
+          window.open('https://github.com/MoCheeseKy/my-ramadhan', '_blank');
           onClose();
         }}
         className='w-full mt-4 py-4 bg-slate-800 dark:bg-slate-700 text-white font-bold rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2 shadow-md active:scale-95'
