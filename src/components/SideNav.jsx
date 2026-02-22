@@ -1,20 +1,17 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
   Home,
   BookOpen,
-  Book,
   Heart,
   Compass,
-  Activity,
   CalendarDays,
   MessageCircle,
   User,
-  List,
   Pen,
   Fingerprint,
   Droplets,
@@ -25,9 +22,9 @@ import {
 export default function SideNav() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const navRef = useRef(null);
 
-  // Menutup SideNav otomatis jika klik di luar area
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (navRef.current && !navRef.current.contains(event.target)) {
@@ -38,7 +35,6 @@ export default function SideNav() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Konfigurasi Navigasi yang dikelompokkan
   const navGroups = [
     [
       {
@@ -148,7 +144,6 @@ export default function SideNav() {
       ref={navRef}
       className='fixed top-1/2 right-0 -translate-y-1/2 z-[100] flex items-center'
     >
-      {/* ─── TOMBOL PEMICU (Trigger Button) ─── */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`
@@ -165,7 +160,6 @@ export default function SideNav() {
         <ChevronLeft size={18} strokeWidth={2.5} className='-ml-1' />
       </button>
 
-      {/* ─── CONTAINER UTAMA LACI (Mengatur 40vh dan Transisi Laci) ─── */}
       <div
         className={`
           absolute right-0 top-1/2 -translate-y-1/2 
@@ -175,14 +169,11 @@ export default function SideNav() {
           ${isOpen ? 'w-16 opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-12 pointer-events-none'}
         `}
         style={{
-          // Batas tinggi diatur di sini
           height: '40vh',
-          minHeight: '250px', // Mencegah laci terlalu pendek di layar mungil
+          minHeight: '250px',
         }}
       >
-        {/* ─── AREA SCROLL MENU (Terpisah agar Tooltip tidak terpotong) ─── */}
         <div className='w-full h-full overflow-y-auto overflow-x-visible custom-scrollbar flex flex-col items-center py-4 gap-1.5'>
-          {/* Tombol Tutup Laci di dalam area scroll */}
           <button
             onClick={() => setIsOpen(false)}
             className='w-10 h-10 mb-2 rounded-xl flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors'
@@ -192,7 +183,6 @@ export default function SideNav() {
 
           {navGroups.map((group, groupIndex) => (
             <React.Fragment key={groupIndex}>
-              {/* Pembatas antar grup menu */}
               {groupIndex > 0 && (
                 <div className='w-8 h-px bg-slate-200/60 dark:bg-slate-700/60 my-1 rounded-full shrink-0' />
               )}
@@ -200,8 +190,8 @@ export default function SideNav() {
               {group.map((item, itemIndex) => {
                 const Icon = item.icon;
                 const isActive =
-                  router.pathname === item.path ||
-                  (item.path !== '/' && router.pathname.startsWith(item.path));
+                  pathname === item.path ||
+                  (item.path !== '/' && pathname?.startsWith(item.path));
 
                 return (
                   <div
@@ -224,13 +214,11 @@ export default function SideNav() {
                     >
                       <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
 
-                      {/* Indikator titik aktif di samping */}
                       {isActive && (
                         <span className='absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-current' />
                       )}
                     </button>
 
-                    {/* Tooltip Keren yang muncul saat di-hover */}
                     <div
                       className='
                       absolute right-14 top-1/2 -translate-y-1/2 px-3 py-1.5 
@@ -241,7 +229,6 @@ export default function SideNav() {
                     '
                     >
                       {item.label}
-                      {/* Segitiga panah kecil */}
                       <div className='absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-slate-800 dark:bg-slate-100 rotate-45' />
                     </div>
                   </div>

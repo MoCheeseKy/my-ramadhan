@@ -17,6 +17,7 @@ import { moods } from '@/data/journalPrompts';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 import localforage from 'localforage';
+import DrawerPanel from '@/components/_shared/DrawerPanel';
 
 dayjs.locale('id');
 
@@ -71,6 +72,7 @@ export default function JurnalPage() {
   const router = useRouter();
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedEntry, setSelectedEntry] = useState(null);
 
   // Function untuk memuat list jurnal secara lokal
   useEffect(() => {
@@ -198,11 +200,15 @@ export default function JurnalPage() {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      className='bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm relative group'
+                      onClick={() => setSelectedEntry(entry)}
+                      className='bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm relative group cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors'
                     >
                       <button
-                        onClick={() => handleDelete(entry.id)}
-                        className='absolute top-4 right-4 p-2 text-rose-500 bg-rose-50 dark:bg-rose-900/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity'
+                        onClick={(e) => {
+                          e.stopPropagation(); // Mencegah drawer terbuka saat klik tombol hapus
+                          handleDelete(entry.id);
+                        }}
+                        className='absolute top-4 right-4 p-2 text-rose-500 bg-rose-50 dark:bg-rose-900/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10'
                       >
                         <X size={14} />
                       </button>
@@ -221,7 +227,7 @@ export default function JurnalPage() {
                           </p>
                         </div>
                       </div>
-                      <h4 className='font-bold text-slate-800 dark:text-slate-100 mb-2'>
+                      <h4 className='font-bold text-slate-800 dark:text-slate-100 mb-2 pr-6'>
                         {entry.title}
                       </h4>
                       <p className='text-sm text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-3'>
@@ -250,6 +256,54 @@ export default function JurnalPage() {
           )}
         </div>
       </main>
+
+      <DrawerPanel
+        open={!!selectedEntry}
+        onClose={() => setSelectedEntry(null)}
+        title='Detail Catatan'
+        icon={BookOpen}
+        hideFooterButton
+      >
+        {selectedEntry && (
+          <div className='space-y-5 pb-4'>
+            <div className='flex items-center gap-3'>
+              <span className='text-4xl'>
+                {getMood(selectedEntry.mood)?.icon || '💭'}
+              </span>
+              <div>
+                <h3 className='font-bold text-xl text-slate-800 dark:text-slate-100 leading-tight mb-1'>
+                  {selectedEntry.title}
+                </h3>
+                <p className='text-xs text-slate-500 dark:text-slate-400 font-medium'>
+                  {dayjs(selectedEntry.created_at).format(
+                    'DD MMMM YYYY, HH:mm',
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className='p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800'>
+              <p className='text-slate-700 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-wrap'>
+                {selectedEntry.content}
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                sessionStorage.setItem(
+                  'ramatalk_journal_context',
+                  JSON.stringify(selectedEntry),
+                );
+                router.push('/ramatalk');
+              }}
+              className='w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md active:scale-95'
+            >
+              <Sparkles size={18} />
+              Curhat ke Ramatalk
+            </button>
+          </div>
+        )}
+      </DrawerPanel>
     </div>
   );
 }
