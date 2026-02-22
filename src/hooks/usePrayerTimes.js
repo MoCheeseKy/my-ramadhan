@@ -1,39 +1,42 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import localforage from 'localforage';
 
-/**
- * usePrayerTimes — fetch jadwal sholat dari API berdasarkan kota user.
- * Kota diambil dari localStorage (myRamadhan_user), default Jakarta.
- *
- * @returns {{ prayerTimes: object|null, userCity: string, fetchPrayerTimes: Function }}
- */
-const usePrayerTimes = () => {
+export default function usePrayerTimes() {
   const [prayerTimes, setPrayerTimes] = useState(null);
   const [userCity, setUserCity] = useState('Jakarta');
 
   const fetchPrayerTimes = useCallback(async () => {
     try {
-      const localUserStr = localStorage.getItem('myRamadhan_user');
-      const localUser = localUserStr ? JSON.parse(localUserStr) : null;
-      const city = localUser?.location_city || 'Jakarta';
-
+      const profile = await localforage.getItem('user_profile');
+      const city = profile?.location || 'Jakarta';
       setUserCity(city);
 
       const res = await fetch(`/api/schedule?city=${encodeURIComponent(city)}`);
       const data = await res.json();
-      const dayjs = (await import('dayjs')).default;
-      const todayData = data.schedule.find((item) =>
-        dayjs(item.isoDate).isSame(dayjs(), 'day'),
-      );
 
-      if (todayData) setPrayerTimes(todayData.timings);
-    } catch (e) {
-      console.error('Gagal fetch jadwal:', e);
+      const todayData = data?.schedule?.[0]?.timings;
+      if (todayData) {
+        setPrayerTimes(todayData);
+      }
+    } catch (error) {
+      console.error('Gagal memuat jadwal sholat:', error);
     }
   }, []);
 
-  return { prayerTimes, userCity, fetchPrayerTimes };
-};
+  useEffect(() => {
+    fetchPrayerTimes();
 
-export default usePrayerTimes;
+    const handleProfileUpdate = () => {
+      fetchPrayerTimes();
+    };
+
+    window.addEventListener('user_profile_updated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('user_profile_updated', handleProfileUpdate);
+    };
+  }, [fetchPrayerTimes]);
+
+  return { prayerTimes, userCity, fetchPrayerTimes };
+}

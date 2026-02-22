@@ -1,22 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, LogOut, LogIn } from 'lucide-react';
+import { ArrowLeft, Smartphone } from 'lucide-react';
+import localforage from 'localforage';
 
 import useUser from '@/hooks/useUser';
-import useAppMode from '@/hooks/useAppMode';
-import useUserProfile from '@/hooks/useUserProfile';
 
-// Komponen UI
 import UserProfileCard from '@/components/User/UserProfileCard';
 import PreferensiMenuSection from '@/components/User/PreferensiMenuSection';
 import BantuanMenuSection from '@/components/User/BantuanMenuSection';
 
-// Drawers
 import DrawerConfirmReset from '@/components/User/Drawer/DrawerConfirmReset';
-import DrawerConfirmLogout from '@/components/User/Drawer/DrawerConfirmLogout';
 import DrawerEditProfil from '@/components/User/Drawer/DrawerEditProfil';
 import DrawerDataManagement from '@/components/User/Drawer/DrawerDataManagement';
 import DrawerTema from '@/components/User/Drawer/DrawerTema';
@@ -25,49 +20,138 @@ import DrawerPrivasi from '@/components/User/Drawer/DrawerPrivasi';
 import DrawerTentang from '@/components/User/Drawer/DrawerTentang';
 import DrawerPengembang from '@/components/User/Drawer/DrawerPengembang';
 import DrawerDonasi from '@/components/User/Drawer/DrawerDonasi';
+import DrawerSyncDevice from '@/components/User/Drawer/DrawerSyncDevice';
 
-/**
- * Enum string untuk nama drawer — satu state string menggantikan 10 boolean.
- */
 const DRAWERS = {
   EDIT_PROFIL: 'edit_profil',
   TEMA: 'tema',
   DATA_MANAGEMENT: 'data_management',
   CONFIRM_RESET: 'confirm_reset',
-  CONFIRM_LOGOUT: 'confirm_logout',
   BANTUAN: 'bantuan',
   PRIVASI: 'privasi',
   TENTANG: 'tentang',
   PENGEMBANG: 'pengembang',
   DONASI: 'donasi',
+  SYNC_DEVICE: 'sync_device',
 };
 
 export default function UserProfile() {
   const router = useRouter();
   const { user, loading } = useUser();
-  const { isPWA } = useAppMode();
 
   const [activeDrawer, setActiveDrawer] = useState(null);
   const closeDrawer = () => setActiveDrawer(null);
 
-  const {
-    theme,
-    locationName,
-    profileData,
-    editName,
-    setEditName,
-    editLocation,
-    setEditLocation,
-    isUploading,
-    isSaving,
-    toggleTheme,
-    handleUploadPhoto,
-    handleSaveProfile,
-    handleExportData,
-    handleImportData,
-    executeLogout,
-    executeResetData,
-  } = useUserProfile(user, isPWA);
+  const [theme, setTheme] = useState('light');
+  const [editName, setEditName] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [avatar, setAvatar] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Function untuk memuat data pengguna secara lokal
+  useEffect(() => {
+    if (user) {
+      setEditName(user.name || '');
+      setEditLocation(user.location || '');
+      setAvatar(user.avatar || null);
+    }
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+  }, [user]);
+
+  // Function untuk mengganti tema aplikasi
+  const toggleTheme = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // Function untuk mengonversi foto profil menjadi base64
+  const handleUploadPhoto = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatar(reader.result);
+      setIsUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Function untuk menyimpan pembaruan profil ke penyimpanan lokal
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      const updatedUser = {
+        ...user,
+        name: editName,
+        location: editLocation,
+        avatar,
+      };
+      await localforage.setItem('user_profile', updatedUser);
+
+      window.dispatchEvent(new Event('user_profile_updated'));
+
+      closeDrawer();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Function untuk mengekspor data lokal menjadi file JSON
+  const handleExportData = async () => {
+    try {
+      const keys = await localforage.keys();
+      const exportData = {};
+      for (const key of keys) {
+        exportData[key] = await localforage.getItem(key);
+      }
+      const blob = new Blob([JSON.stringify(exportData)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_myramadhan_${new Date().getTime()}.json`;
+      a.click();
+    } catch (error) {
+      console.error('Export gagal', error);
+    }
+  };
+
+  // Function untuk mengimpor data dari file JSON ke penyimpanan lokal
+  const handleImportData = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        for (const key of Object.keys(data)) {
+          await localforage.setItem(key, data[key]);
+        }
+        alert('Data berhasil diimpor! Aplikasi akan dimuat ulang.');
+        window.location.reload();
+      } catch (error) {
+        alert('Format file tidak valid!');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Function untuk menghapus semua data aplikasi
+  const executeResetData = async () => {
+    await localforage.clear();
+    window.location.href = '/';
+  };
 
   if (loading) {
     return (
@@ -79,7 +163,6 @@ export default function UserProfile() {
 
   return (
     <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 pb-24 transition-colors duration-300'>
-      {/* Header sticky */}
       <header className='sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-4'>
         <div className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto flex items-center gap-3 w-full'>
           <button
@@ -97,19 +180,15 @@ export default function UserProfile() {
         </div>
       </header>
 
-      {/* Konten utama */}
       <main className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto p-5 space-y-6 mt-2'>
-        {/* Kartu profil */}
         <UserProfileCard
           user={user}
-          profileData={profileData}
-          locationName={locationName}
-          onEdit={() => setActiveDrawer(DRAWERS.EDIT_PROFIL)}
+          profileData={user}
+          locationName={editLocation}
+          onEditProfile={() => setActiveDrawer(DRAWERS.EDIT_PROFIL)}
         />
 
-        {/* Grid 2 kolom di desktop */}
         <div className='flex flex-col md:grid md:grid-cols-2 gap-6 items-start'>
-          {/* Kolom kiri: preferensi + login/logout */}
           <div className='space-y-6 w-full order-1'>
             <PreferensiMenuSection
               theme={theme}
@@ -118,25 +197,15 @@ export default function UserProfile() {
               onOpenReset={() => setActiveDrawer(DRAWERS.CONFIRM_RESET)}
             />
             <div className='w-full'>
-              {user ? (
-                <button
-                  onClick={() => setActiveDrawer(DRAWERS.CONFIRM_LOGOUT)}
-                  className='w-full py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-rose-500 dark:text-rose-400 font-bold rounded-2xl shadow-sm hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-200 dark:hover:border-rose-800 transition-all flex items-center justify-center gap-2'
-                >
-                  <LogOut size={18} /> Keluar Akun
-                </button>
-              ) : (
-                <button
-                  onClick={() => router.push('/auth/login')}
-                  className='w-full py-4 bg-[#1e3a8a] text-white font-bold rounded-2xl shadow-md hover:bg-blue-800 transition-all flex items-center justify-center gap-2'
-                >
-                  <LogIn size={18} /> Login / Daftar Sekarang
-                </button>
-              )}
+              <button
+                onClick={() => setActiveDrawer(DRAWERS.SYNC_DEVICE)}
+                className='w-full py-4 bg-[#1e3a8a] text-white font-bold rounded-2xl shadow-md hover:bg-blue-800 transition-all flex items-center justify-center gap-2'
+              >
+                <Smartphone size={18} /> Sinkronisasi Perangkat (P2P)
+              </button>
             </div>
           </div>
 
-          {/* Kolom kanan: bantuan & info */}
           <div className='w-full order-2'>
             <BantuanMenuSection
               onOpenBantuan={() => setActiveDrawer(DRAWERS.BANTUAN)}
@@ -153,21 +222,15 @@ export default function UserProfile() {
         </p>
       </main>
 
-      {/* ── Drawers ── */}
       <DrawerConfirmReset
         open={activeDrawer === DRAWERS.CONFIRM_RESET}
         onClose={closeDrawer}
-        onConfirm={() => executeResetData(router)}
-      />
-      <DrawerConfirmLogout
-        open={activeDrawer === DRAWERS.CONFIRM_LOGOUT}
-        onClose={closeDrawer}
-        onConfirm={() => executeLogout(router)}
+        onConfirm={() => executeResetData()}
       />
       <DrawerEditProfil
         open={activeDrawer === DRAWERS.EDIT_PROFIL}
         onClose={closeDrawer}
-        profileData={profileData}
+        profileData={user || {}}
         editName={editName}
         setEditName={setEditName}
         editLocation={editLocation}
@@ -210,6 +273,10 @@ export default function UserProfile() {
       />
       <DrawerDonasi
         open={activeDrawer === DRAWERS.DONASI}
+        onClose={closeDrawer}
+      />
+      <DrawerSyncDevice
+        open={activeDrawer === DRAWERS.SYNC_DEVICE}
         onClose={closeDrawer}
       />
     </div>

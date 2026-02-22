@@ -3,18 +3,6 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
-/**
- * DrawerPanel — bottom sheet di mobile, modal centered di desktop.
- * Menutup otomatis saat klik di luar panel.
- *
- * @prop {boolean}   open               - Apakah drawer terbuka
- * @prop {Function}  onClose            - Callback saat menutup
- * @prop {string}    title              - Judul drawer
- * @prop {Component} icon               - Icon lucide untuk judul
- * @prop {ReactNode} children           - Konten drawer
- * @prop {string}    [titleColor]       - Tailwind class warna judul
- * @prop {boolean}   [hideFooterButton] - Sembunyikan tombol "Tutup" di footer
- */
 const DrawerPanel = ({
   open,
   onClose,
@@ -26,14 +14,22 @@ const DrawerPanel = ({
 }) => {
   const panelRef = useRef(null);
 
-  // Tutup drawer saat klik di luar panel
   useEffect(() => {
-    if (!open) return;
+    if (!open) return; // Hanya jalankan jika drawer sedang terbuka
+
     const handler = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target)) onClose();
+      // Pastikan klik terjadi di luar elemen panelRef
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        onClose();
+      }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+
+    // Gunakan 'pointerdown' (lebih stabil di mobile/desktop) alih-alih 'mousedown'
+    document.addEventListener('pointerdown', handler);
+
+    return () => {
+      document.removeEventListener('pointerdown', handler);
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -44,10 +40,8 @@ const DrawerPanel = ({
         ref={panelRef}
         className='bg-white dark:bg-slate-900 w-full max-w-md rounded-t-[2rem] rounded-b-none md:rounded-[2rem] p-6 shadow-2xl animate-in slide-in-from-bottom-10 md:slide-in-from-bottom-0 md:zoom-in-95 duration-200 max-h-[85vh] flex flex-col border border-slate-100 dark:border-slate-700/50'
       >
-        {/* Drag handle — hanya tampil di mobile */}
         <div className='w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6 shrink-0 md:hidden' />
 
-        {/* Header */}
         <div className='flex items-center justify-between mb-5 shrink-0'>
           <h2
             className={`font-bold text-lg flex items-center gap-2.5 ${titleColor}`}
@@ -62,7 +56,6 @@ const DrawerPanel = ({
           </button>
         </div>
 
-        {/* Konten scrollable */}
         <div className='overflow-y-auto custom-scrollbar pr-2 flex-1 pb-4 text-slate-600 dark:text-slate-300 text-sm leading-relaxed space-y-4'>
           {children}
         </div>

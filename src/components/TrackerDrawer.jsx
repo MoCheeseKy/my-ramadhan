@@ -16,12 +16,8 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
-import { useRouter } from 'next/navigation';
-
-// --- TAMBAHAN: Import Hook dan StorageService ---
-import useUser from '@/hooks/useUser';
-import useAppMode from '@/hooks/useAppMode';
-import { StorageService } from '@/lib/storageService';
+import { useRouter } from 'next/navigation'; // Diubah jadi next/navigation agar aman di App Router
+import localforage from 'localforage';
 
 dayjs.locale('id');
 
@@ -97,62 +93,40 @@ const items = [
 export default function TrackerDrawer({ isOpen, onClose, onUpdate }) {
   const router = useRouter();
 
-  // --- TAMBAHAN: Gunakan hooks ---
-  const { user } = useUser();
-  const { isPWA } = useAppMode();
-
   const [trackerData, setTrackerData] = useState({});
   const [customHabits, setCustomHabits] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- PERUBAHAN: Mengambil data lewat StorageService ---
+  // --- PERUBAHAN: Mengambil data lewat localforage ---
   const fetchData = useCallback(async () => {
-    if (!user) return;
     setLoading(true);
 
     try {
-      // Ambil custom habits dari profil user
-      const userData = await StorageService.getProfile(
-        user.personal_code,
-        isPWA,
-      );
-      setCustomHabits(userData?.custom_habits || []);
+      // Ambil custom habits dari localforage
+      const habitsData = (await localforage.getItem('custom_habits')) || [];
+      setCustomHabits(habitsData);
 
       // Ambil data tracker hari ini
       const today = dayjs().format('YYYY-MM-DD');
-      let data = await StorageService.getDailyTracker(
-        user.personal_code,
-        today,
-        isPWA,
-      );
+      const allTrackerData =
+        (await localforage.getItem('ramadhan_tracker')) || {};
 
-      // Jika belum ada data tracker hari ini, buat baru
-      if (!data) {
-        data = await StorageService.saveDailyTracker(
-          user.personal_code,
-          today,
-          { custom_progress: {} },
-          isPWA,
-        );
-      }
-
-      setTrackerData(data || {});
+      setTrackerData(allTrackerData[today] || {});
     } catch (error) {
       console.error('Gagal memuat tracker drawer:', error);
     } finally {
       setLoading(false);
     }
-  }, [user, isPWA]);
+  }, []);
 
   useEffect(() => {
     if (isOpen) fetchData();
   }, [isOpen, fetchData]);
 
-  // --- PERUBAHAN: Menyimpan data lewat StorageService ---
+  // --- PERUBAHAN: Menyimpan data lewat localforage ---
   const toggleItem = async (key, isCustom = false) => {
-    if (!user) return;
     const today = dayjs().format('YYYY-MM-DD');
-    let updatedTrackerData = {};
+    let updatedRow = {};
 
     if (isCustom) {
       const currentCustomProgress = trackerData.custom_progress || {};
@@ -161,7 +135,7 @@ export default function TrackerDrawer({ isOpen, onClose, onUpdate }) {
         [key]: !currentCustomProgress[key],
       };
 
-      updatedTrackerData = { custom_progress: updatedCustomProgress };
+      updatedRow = { ...trackerData, custom_progress: updatedCustomProgress };
 
       // Update state lokal dulu biar UI cepat merespon
       setTrackerData((prev) => ({
@@ -170,20 +144,20 @@ export default function TrackerDrawer({ isOpen, onClose, onUpdate }) {
       }));
     } else {
       const newValue = !trackerData[key];
-      updatedTrackerData = { [key]: newValue };
+      updatedRow = { ...trackerData, [key]: newValue };
 
       // Update state lokal dulu biar UI cepat merespon
       setTrackerData((prev) => ({ ...prev, [key]: newValue }));
     }
 
     try {
-      // Simpan ke DB/Lokal sesuai mode
-      await StorageService.saveDailyTracker(
-        user.personal_code,
-        today,
-        updatedTrackerData,
-        isPWA,
-      );
+      // Simpan ke localforage
+      const allTrackerData =
+        (await localforage.getItem('ramadhan_tracker')) || {};
+      const newAllData = { ...allTrackerData, [today]: updatedRow };
+
+      await localforage.setItem('ramadhan_tracker', newAllData);
+
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Gagal memperbarui tracker:', error);

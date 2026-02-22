@@ -90,17 +90,13 @@ export default function ScheduleDrawer({ isOpen, onClose, onUpdate }) {
   // Load kota dari StorageService (IndexedDB) saat laci dibuka
   useEffect(() => {
     if (isOpen) {
-      const loadCity = async () => {
-        const profile = await StorageService.getProfile();
-        const city = profile.location_city || 'Jakarta';
-        setSelectedCity(city);
-        fetchSchedule(city);
-        setIsPickerOpen(false);
-        setSearchTerm('');
-      };
-      loadCity();
+      const city = user?.location || 'Jakarta';
+      setSelectedCity(city);
+      fetchSchedule(city);
+      setIsPickerOpen(false);
+      setSearchTerm('');
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const fetchSchedule = async (city) => {
     setIsLoadingSchedule(true);
@@ -140,11 +136,11 @@ export default function ScheduleDrawer({ isOpen, onClose, onUpdate }) {
     fetchSchedule(city);
 
     try {
-      // Simpan langsung ke IndexedDB tanpa perlu supabase
-      await StorageService.saveProfile({ location_city: city });
+      const currentUser = (await localforage.getItem('user_profile')) || {};
+      const updatedUser = { ...currentUser, location: city };
+      await localforage.setItem('user_profile', updatedUser);
 
-      // Update global user state jika memungkinkan
-      if (mutateUser) mutateUser();
+      window.dispatchEvent(new Event('user_profile_updated'));
 
       if (onUpdate) onUpdate();
       setTimeout(() => {
