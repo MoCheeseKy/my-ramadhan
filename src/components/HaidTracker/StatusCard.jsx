@@ -4,6 +4,8 @@ import dayjs from 'dayjs';
 /**
  * Card status utama: menampilkan status SEDANG HAID atau SUCI
  * beserta tombol aksi mulai/selesai siklus.
+ *
+ * FIX: Tambah null check untuk activePeriod
  */
 export default function StatusCard({
   activePeriod,
@@ -11,7 +13,7 @@ export default function StatusCard({
   onStartPeriod,
   onEndPeriod,
 }) {
-  const isActive = activePeriod !== null;
+  const isActive = activePeriod !== null && activePeriod !== undefined;
 
   return (
     <div
@@ -37,7 +39,7 @@ export default function StatusCard({
           {isActive ? 'SEDANG HAID' : 'SUCI'}
         </h2>
 
-        {isActive ? (
+        {isActive && activePeriod?.start_date ? (
           <div className='animate-fadeUp'>
             <p className='text-pink-100 mb-6'>
               Hari ke-{' '}
