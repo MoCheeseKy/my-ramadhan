@@ -18,7 +18,7 @@ export default function useHaditsStorage() {
     }
   };
 
-  const saveBookmarksData = async (newBookmarks) => {
+  const saveBookmarks = async (newBookmarks) => {
     try {
       await localforage.setItem(BOOKMARKS_KEY, newBookmarks);
       return true;
@@ -45,5 +45,5 @@ export default function useHaditsStorage() {
     }
   };
 
-  return { loadHaditsData, saveBookmarksData, saveLastRead, saveSettings };
+  return { loadHaditsData, saveBookmarks, saveLastRead, saveSettings };
 }

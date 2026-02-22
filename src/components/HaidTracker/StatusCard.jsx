@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 
 /**
  * Card status utama: menampilkan status SEDANG HAID atau SUCI
- * beserta tombol aksi mulai/selesai siklus.
+ * beserta tombol aksi mulai/selesai siklus?.
  */
 export default function StatusCard({
   activePeriod,
@@ -17,7 +17,7 @@ export default function StatusCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[2.5rem] p-8 text-center shadow-xl transition-all duration-500 ${
+      className={`relative overflow-hidden rounded-[2?.5rem] p-8 text-center shadow-xl transition-all duration-500 ${
         isActive
           ? 'bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-pink-200 dark:shadow-pink-900'
           : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border border-pink-100 dark:border-pink-900'
@@ -44,7 +44,7 @@ export default function StatusCard({
             <p className='text-pink-100 mb-6'>
               Hari ke-{' '}
               <span className='text-2xl font-bold text-white'>
-                {getDuration(activePeriod.start_date)}
+                {getDuration(activePeriod?.start_date)}
               </span>
             </p>
             <button
@@ -54,7 +54,7 @@ export default function StatusCard({
               <CheckCircle size={18} /> Tandai Selesai
             </button>
             <p className='text-[10px] text-pink-200 mt-4 opacity-80'>
-              Dimulai: {dayjs(activePeriod.start_date).format('DD MMMM YYYY')}
+              Dimulai: {dayjs(activePeriod?.start_date)?.format('DD MMMM YYYY')}
             </p>
           </div>
         ) : (

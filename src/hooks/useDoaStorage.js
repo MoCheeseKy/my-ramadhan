@@ -18,7 +18,7 @@ export default function useDoaStorage() {
     }
   };
 
-  const saveBookmarksData = async (newBookmarks) => {
+  const saveBookmarks = async (newBookmarks) => {
     try {
       await localforage.setItem(BOOKMARKS_KEY, newBookmarks);
       return true;
@@ -45,5 +45,5 @@ export default function useDoaStorage() {
     }
   };
 
-  return { loadDoaData, saveBookmarksData, saveLastRead, saveSettings };
+  return { loadDoaData, saveBookmarks, saveLastRead, saveSettings };
 }

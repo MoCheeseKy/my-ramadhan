@@ -14,7 +14,7 @@ export default function useHaidData() {
     try {
       const data = (await localforage.getItem(HAID_KEY)) || [];
       const sorted = data.sort(
-        (a, b) => new Date(b.startDate) - new Date(a.startDate),
+        (a, b) => new Date(b.start_date) - new Date(a.start_date),
       );
       setLogs(sorted);
     } catch (error) {
@@ -45,7 +45,7 @@ export default function useHaidData() {
       }
 
       const sorted = updatedLogs.sort(
-        (a, b) => new Date(b.startDate) - new Date(a.startDate),
+        (a, b) => new Date(b.start_date) - new Date(a.start_date),
       );
       await localforage.setItem(HAID_KEY, sorted);
       setLogs(sorted);
