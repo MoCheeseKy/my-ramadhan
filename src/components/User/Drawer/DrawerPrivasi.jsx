@@ -20,18 +20,23 @@ const DrawerPrivasi = ({ open, onClose }) => (
       {[
         {
           num: 1,
-          title: 'Mode Privat 100% (PWA)',
-          desc: 'Saat diinstal sebagai aplikasi, semua tulisan Jurnal yang sensitif dan catatan Tracker hanya akan disimpan secara lokal di HP Anda. Kami tidak bisa melihat atau membacanya.',
+          title: '100% Local-First (Data di HP Anda)',
+          desc: 'Semua data Anda (Profil, Jurnal, Tracker Ibadah, Siklus Haid) disimpan sepenuhnya secara lokal di memori perangkat Anda (menggunakan IndexedDB/localforage).',
         },
         {
           num: 2,
-          title: 'Keamanan Data Web',
-          desc: 'Jika Anda menggunakan versi Web dengan login *Personal Code*, preferensi Anda akan disimpan di database Cloud ber-enkripsi standar industri.',
+          title: 'Tidak Ada Database Server',
+          desc: 'Kami sudah tidak lagi menggunakan database cloud pihak ketiga. Kami tidak mengumpulkan, melihat, atau menyimpan data pribadi Anda di server mana pun.',
         },
         {
           num: 3,
-          title: 'Tanpa Jual Beli Data',
-          desc: 'Aplikasi ini tidak memiliki iklan pelacak dan kami tidak akan pernah menjual data personal Anda kepada pihak ketiga mana pun.',
+          title: 'Transfer Data Langsung (P2P)',
+          desc: 'Saat Anda memindahkan data ke perangkat baru, data ditransfer secara langsung antar perangkat (Peer-to-Peer) tanpa perantara server.',
+        },
+        {
+          num: 4,
+          title: 'Tanpa Iklan & Pelacakan',
+          desc: 'Aplikasi ini bersih dari iklan pihak ketiga dan skrip pelacak yang memata-matai aktivitas Anda.',
         },
       ].map(({ num, title, desc }) => (
         <div key={num} className='flex gap-3 items-start'>

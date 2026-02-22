@@ -21,6 +21,7 @@ import DrawerTentang from '@/components/User/Drawer/DrawerTentang';
 import DrawerPengembang from '@/components/User/Drawer/DrawerPengembang';
 import DrawerDonasi from '@/components/User/Drawer/DrawerDonasi';
 import DrawerSyncDevice from '@/components/User/Drawer/DrawerSyncDevice';
+import DrawerGithub from '@/components/User/Drawer/DrawerGithub';
 
 const DRAWERS = {
   EDIT_PROFIL: 'edit_profil',
@@ -33,6 +34,7 @@ const DRAWERS = {
   PENGEMBANG: 'pengembang',
   DONASI: 'donasi',
   SYNC_DEVICE: 'sync_device',
+  GITHUB: 'github',
 };
 
 export default function UserProfile() {
@@ -95,9 +97,7 @@ export default function UserProfile() {
         avatar,
       };
       await localforage.setItem('user_profile', updatedUser);
-
       window.dispatchEvent(new Event('user_profile_updated'));
-
       closeDrawer();
     } catch (error) {
       console.error(error);
@@ -213,6 +213,7 @@ export default function UserProfile() {
               onOpenTentang={() => setActiveDrawer(DRAWERS.TENTANG)}
               onOpenPengembang={() => setActiveDrawer(DRAWERS.PENGEMBANG)}
               onOpenDonasi={() => setActiveDrawer(DRAWERS.DONASI)}
+              onOpenGithub={() => setActiveDrawer(DRAWERS.GITHUB)}
             />
           </div>
         </div>
@@ -277,6 +278,10 @@ export default function UserProfile() {
       />
       <DrawerSyncDevice
         open={activeDrawer === DRAWERS.SYNC_DEVICE}
+        onClose={closeDrawer}
+      />
+      <DrawerGithub
+        open={activeDrawer === DRAWERS.GITHUB}
         onClose={closeDrawer}
       />
     </div>

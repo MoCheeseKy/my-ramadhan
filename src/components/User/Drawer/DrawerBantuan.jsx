@@ -17,13 +17,23 @@ const DrawerBantuan = ({ open, onClose }) => (
     <div className='space-y-4'>
       <div className='bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl'>
         <h4 className='font-bold text-slate-800 dark:text-slate-100 mb-1 flex items-center gap-2'>
-          <span className='text-blue-500 font-black'>Q.</span> Kenapa harus
-          pakai versi Aplikasi (PWA)?
+          <span className='text-blue-500 font-black'>Q.</span> Kenapa data saya
+          tidak ada di HP lain?
         </h4>
         <p className='text-[13px] mt-1.5'>
-          Versi PWA menyimpan Jurnal dan Tracker 100% secara offline di memori
-          HP Anda. Ini membuatnya jauh lebih cepat, privat, dan hemat kuota
-          dibanding versi Web.
+          Karena aplikasi ini 100% berjalan offline (Local-First). Data Anda
+          tersimpan aman di memori HP tempat Anda mengisinya, tidak di server.
+        </p>
+      </div>
+      <div className='bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl'>
+        <h4 className='font-bold text-slate-800 dark:text-slate-100 mb-1 flex items-center gap-2'>
+          <span className='text-blue-500 font-black'>Q.</span> Bagaimana cara
+          pindah HP tanpa hilang data?
+        </h4>
+        <p className='text-[13px] mt-1.5'>
+          Anda bisa menggunakan fitur "Sinkronisasi Perangkat (P2P)" di menu
+          profil untuk memindahkan data langsung via QR Code/Link, atau
+          menggunakan "Manajemen Data" untuk ekspor/impor file.
         </p>
       </div>
       <div className='bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl'>
@@ -33,17 +43,19 @@ const DrawerBantuan = ({ open, onClose }) => (
         </h4>
         <p className='text-[13px] mt-1.5'>
           Anda bisa mengubah lokasi kota secara manual melalui tombol "Edit
-          Profil" yang ada di bagian atas halaman ini.
+          Profil" (ikon pensil) yang ada di bagian atas halaman Profil ini.
         </p>
       </div>
       <div className='bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl'>
         <h4 className='font-bold text-slate-800 dark:text-slate-100 mb-1 flex items-center gap-2'>
-          <span className='text-blue-500 font-black'>Q.</span> Bagaimana cara
-          pindah HP tanpa hilang data?
+          <span className='text-blue-500 font-black'>Q.</span> Apakah aplikasi
+          ini butuh kuota internet?
         </h4>
         <p className='text-[13px] mt-1.5'>
-          Gunakan fitur "Manajemen Data" untuk meng-ekspor data Anda menjadi
-          file Backup, lalu impor file tersebut di HP Anda yang baru.
+          Setelah Anda membukanya pertama kali (atau di-install sebagai PWA),
+          sebagian besar fitur (Al-Qur'an, Hadits, Tracker) bisa berjalan tanpa
+          internet. Internet hanya butuh untuk AI Ramatalk dan pembaruan jadwal
+          sholat.
         </p>
       </div>
     </div>

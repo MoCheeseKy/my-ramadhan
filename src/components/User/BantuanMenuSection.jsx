@@ -11,28 +11,19 @@ import {
   Github,
 } from 'lucide-react';
 
-/**
- * BantuanMenuSection — daftar menu bantuan dan informasi aplikasi.
- *
- * @prop {Function} onOpenBantuan     - Buka drawer FAQ
- * @prop {Function} onOpenPrivasi     - Buka drawer kebijakan privasi
- * @prop {Function} onOpenTentang     - Buka drawer tentang aplikasi
- * @prop {Function} onOpenPengembang  - Buka drawer profil pengembang
- * @prop {Function} onOpenDonasi      - Buka drawer donasi
- */
 const BantuanMenuSection = ({
   onOpenBantuan,
   onOpenPrivasi,
   onOpenTentang,
   onOpenPengembang,
   onOpenDonasi,
+  onOpenGithub,
 }) => (
   <div>
     <p className='text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-2'>
       Bantuan & Info
     </p>
     <div className='bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col'>
-      {/* Bantuan & FAQ */}
       <button
         onClick={onOpenBantuan}
         className='w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border-b border-slate-50 dark:border-slate-800'
@@ -51,7 +42,6 @@ const BantuanMenuSection = ({
         />
       </button>
 
-      {/* Kebijakan Privasi */}
       <button
         onClick={onOpenPrivasi}
         className='w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border-b border-slate-50 dark:border-slate-800'
@@ -70,7 +60,6 @@ const BantuanMenuSection = ({
         />
       </button>
 
-      {/* Tentang MyRamadhan */}
       <button
         onClick={onOpenTentang}
         className='w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border-b border-slate-50 dark:border-slate-800'
@@ -89,7 +78,6 @@ const BantuanMenuSection = ({
         />
       </button>
 
-      {/* Pengembang Aplikasi */}
       <button
         onClick={onOpenPengembang}
         className='w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border-b border-slate-50 dark:border-slate-800 group'
@@ -108,7 +96,6 @@ const BantuanMenuSection = ({
         />
       </button>
 
-      {/* Kirim Feedback — link eksternal */}
       <a
         href='https://docs.google.com/forms/d/e/1FAIpQLSeB0TrSZDDrJ-xbmEjdiH5mV30Z4A28PFwSfAmTY0Y_qV265A/viewform?usp=publish-editor'
         target='_blank'
@@ -129,11 +116,8 @@ const BantuanMenuSection = ({
         />
       </a>
 
-      {/* GitHub Repo */}
       <button
-        onClick={() =>
-          window.open('https://github.com/MoCheeseKy/my-ramadhan-app', '_blank')
-        }
+        onClick={onOpenGithub}
         className='w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border-b border-slate-50 dark:border-slate-800 group'
       >
         <div className='flex items-center gap-3 text-left'>
@@ -156,7 +140,6 @@ const BantuanMenuSection = ({
         />
       </button>
 
-      {/* Traktir Kopi */}
       <button
         onClick={onOpenDonasi}
         className='w-full flex-1 flex items-center justify-between p-4 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors group'
