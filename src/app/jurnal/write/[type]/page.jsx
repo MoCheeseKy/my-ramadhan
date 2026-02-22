@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -68,7 +68,7 @@ const catStyles = {
 
 export default function WriteJournal() {
   const router = useRouter();
-  const { type } = router.query;
+  const { type } = useParams();
   const textareaRef = useRef(null);
 
   // --- INTEGRASI HOOK ---

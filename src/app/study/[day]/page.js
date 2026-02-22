@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter, useParams } from 'next/navigation';
 import Head from 'next/head';
 import { ArrowLeft, Clock, Tag, Share2, CheckCircle } from 'lucide-react';
 import { studyMaterials } from '@/data/studyMaterials'; // Import data
 
 export default function StudyDetail() {
   const router = useRouter();
-  const { day } = router.query;
+  const { day } = useParams();
   const [material, setMaterial] = useState(null);
 
   useEffect(() => {

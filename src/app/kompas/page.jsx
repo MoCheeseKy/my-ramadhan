@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, MapPin, Navigation, RefreshCw } from 'lucide-react';
 

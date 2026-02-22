@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useRouter, useParams } from 'next/navigation';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 import {
@@ -40,7 +40,7 @@ export default function RamatalkPage() {
   useEffect(() => {
     if (!router.isReady) return;
 
-    const { mode, q } = router.query;
+    const { mode, q } = useParams();;
 
     if (mode && RAMATALK_MODES.find((m) => m.id === mode)) {
       setActiveMode(mode);
@@ -49,7 +49,7 @@ export default function RamatalkPage() {
     if (q) {
       setInput(q);
     }
-  }, [router.isReady, router.query]);
+  }, [router.isReady, useParams();]);
 
   useEffect(() => {
     const savedContext = sessionStorage.getItem('ramatalk_journal_context');

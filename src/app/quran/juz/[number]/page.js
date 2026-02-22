@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, EyeOff } from 'lucide-react';
 
 import useUser from '@/hooks/useUser';
@@ -19,7 +19,7 @@ import AudioPlayer from '@/components/Quran/AudioPlayer';
 
 export default function JuzReader() {
   const router = useRouter();
-  const { number } = router.query;
+  const { number } = useParams();
   const { user } = useUser();
 
   // ─── Data ─────────────────────────────────────────────────────────────────

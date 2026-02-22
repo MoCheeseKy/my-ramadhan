@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter, useParams } from 'next/navigation';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 import { ArrowLeft, Target, Plus, X, Trash2, Check } from 'lucide-react';

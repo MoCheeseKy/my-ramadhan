@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, LogOut, LogIn } from 'lucide-react';
 
 import useUser from '@/hooks/useUser';
