@@ -29,12 +29,20 @@ const DrawerTentang = ({ open, onClose }) => (
     <p className='mb-3 text-[13px] leading-relaxed'>
       <strong>MyRamadhan</strong> adalah inisiatif independen yang dibangun
       untuk menjadi "Asisten Ibadah Personal" Anda. Aplikasi ini dirancang
-      seringan mungkin, bebas dari iklan yang mengganggu, dan mengedepankan
-      pendekatan <em>Privacy-First</em> (privasi utama).
+      seringan mungkin, bebas dari iklan yang mengganggu, dan kini sepenuhnya
+      berjalan secara <em>100% Local-First</em>—memastikan data ibadah Anda aman
+      tersimpan di perangkat sendiri tanpa campur tangan server.
     </p>
     <p className='text-[13px] leading-relaxed'>
-      Semoga aplikasi ini dapat menjadi teman yang baik dalam meraih pahala
-      maksimal selama bulan suci Ramadhan maupun di bulan-bulan lainnya.
+      Semoga aplikasi yang menjaga privasi ini dapat terus menjadi teman setia
+      yang dapat diandalkan dalam meraih pahala maksimal, baik selama bulan suci
+      Ramadhan maupun di hari-hari lainnya.
+    </p>
+    <p className='text-[13px] leading-relaxed font-medium italic text-slate-500 dark:text-slate-400'>
+      Berawal dari developer yang iseng ngoding buat nemenin puasa sendiri, eh
+      malah keterusan bikin sistem sampai selengkap ini. Semoga 'keisengan' ini
+      bisa membawa berkah dan menjadi amal jariyah buat kita semua. Selamat
+      beribadah!
     </p>
   </DrawerPanel>
 );
