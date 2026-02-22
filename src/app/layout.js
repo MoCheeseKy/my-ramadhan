@@ -41,6 +41,7 @@ export default function RootLayout({ children }) {
     // Kita berikan class 'light' sebagai default, nanti bisa diubah ke 'dark' via state/localStorage
     <html lang='id' className='light' suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${inter.className} min-h-screen bg-[#F6F9FC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 selection:bg-blue-200 dark:selection:bg-blue-800 transition-colors duration-300 antialiased`}
       >
         {children}
