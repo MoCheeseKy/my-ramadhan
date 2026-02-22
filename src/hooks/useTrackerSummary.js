@@ -1,75 +1,56 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import localforage from 'localforage';
 import dayjs from 'dayjs';
-import { StorageService } from '@/lib/storageService';
 
-/**
- * useTrackerSummary — mengambil ringkasan progres ibadah harian dari storage.
- * Menghitung jumlah task default + custom habit yang sudah dicentang.
- *
- * @param {object|null} user
- * @param {boolean}     isPWA
- *
- * @returns {{ taskProgress: { completed: number, total: number }, fetchTrackerSummary: Function }}
- */
-const useTrackerSummary = (user, isPWA) => {
+export default function useTrackerSummary() {
   const [taskProgress, setTaskProgress] = useState({ completed: 0, total: 9 });
+  const [loading, setLoading] = useState(true);
 
-  const DEFAULT_TRACKER_KEYS = [
-    'is_puasa',
-    'subuh',
-    'dzuhur',
-    'ashar',
-    'maghrib',
-    'isya',
-    'tarawih',
-    'quran',
-    'sedekah',
-  ];
-
-  const fetchTrackerSummary = async () => {
-    if (!user) return;
-
+  const fetchTrackerSummary = useCallback(async () => {
+    setLoading(true);
     try {
-      const today = dayjs().format('YYYY-MM-DD');
-      const userData = await StorageService.getProfile(
-        user.personal_code,
-        isPWA,
-      );
-      const customHabits = userData?.custom_habits || [];
-      const data = await StorageService.getDailyTracker(
-        user.personal_code,
-        today,
-        isPWA,
-      );
+      const trackerData = (await localforage.getItem('ramadhan_tracker')) || {};
+      const customHabits = (await localforage.getItem('custom_habits')) || [];
 
-      let defaultCompleted = 0;
-      let customCompleted = 0;
+      const todayStr = dayjs().format('YYYY-MM-DD');
+      const todayData = trackerData[todayStr] || {};
 
-      if (data) {
-        defaultCompleted = DEFAULT_TRACKER_KEYS.reduce(
-          (acc, key) => acc + (data[key] ? 1 : 0),
-          0,
-        );
+      let completed = 0;
+      const defaultTasks = [
+        'is_puasa',
+        'subuh',
+        'dzuhur',
+        'ashar',
+        'maghrib',
+        'isya',
+        'tarawih',
+        'quran',
+        'sedekah',
+      ];
+      const total = defaultTasks.length + customHabits.length;
 
-        const customProgress = data.custom_progress || {};
-        customCompleted = customHabits.reduce(
-          (acc, habit) => acc + (customProgress[habit.id] ? 1 : 0),
-          0,
-        );
-      }
-
-      setTaskProgress({
-        completed: defaultCompleted + customCompleted,
-        total: DEFAULT_TRACKER_KEYS.length + customHabits.length,
+      defaultTasks.forEach((key) => {
+        if (todayData[key]) completed++;
       });
-    } catch (err) {
-      console.error('Gagal memuat ringkasan tracker:', err);
+
+      customHabits.forEach((habit) => {
+        if (todayData.custom_habits?.[habit.id]) completed++;
+      });
+
+      setTaskProgress({ completed, total });
+    } catch (error) {
+      console.error(error);
+      setTaskProgress({ completed: 0, total: 9 });
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  return { taskProgress, fetchTrackerSummary };
-};
+  useEffect(() => {
+    fetchTrackerSummary();
+  }, [fetchTrackerSummary]);
 
-export default useTrackerSummary;
+  return { taskProgress, loading, fetchTrackerSummary };
+}

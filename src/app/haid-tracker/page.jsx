@@ -14,7 +14,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import useUser from '@/hooks/useUser';
 import useAppMode from '@/hooks/useAppMode';
 
-import { useHaidData } from '@/hooks/useHaidData';
+import useHaidData from '@/hooks/useHaidData';
 import { useCyclePhase } from '@/hooks/useCyclePhase';
 import StatusCard from '@/components/HaidTracker/StatusCard';
 import CyclePhaseCard from '@/components/HaidTracker/CyclePhaseCard';

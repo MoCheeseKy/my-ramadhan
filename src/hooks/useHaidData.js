@@ -1,186 +1,74 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect, useCallback } from 'react';
 import localforage from 'localforage';
-import dayjs from 'dayjs';
-import {
-  RAMADHAN_START,
-  RAMADHAN_END,
-} from '@/components/HaidTracker/Constants';
 
-/**
- * Mengelola semua operasi data haid: fetch, tambah, update, dan delete.
- * Mendukung dua mode penyimpanan:
- * - PWA  → localforage (offline-first)
- * - Web  → Supabase
- */
-export function useHaidData(user, isPWA) {
-  const [loading, setLoading] = useState(true);
+export default function useHaidData() {
   const [logs, setLogs] = useState([]);
-  const [activePeriod, setActivePeriod] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const HAID_KEY = 'haid_logs';
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = (await localforage.getItem(HAID_KEY)) || [];
+      const sorted = data.sort(
+        (a, b) => new Date(b.startDate) - new Date(a.startDate),
+      );
+      setLogs(sorted);
+    } catch (error) {
+      console.error('Gagal memuat data haid lokal:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (user) fetchData();
-  }, [user, isPWA]);
+    fetchLogs();
+  }, [fetchLogs]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    if (isPWA) {
-      const localHaid = (await localforage.getItem('pwa_haid_logs')) || [];
-      setLogs(localHaid);
-      setActivePeriod(localHaid.find((item) => item.end_date === null) || null);
-    } else {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('personal_code', user.personal_code)
-        .single();
+  const saveLog = async (newLog) => {
+    try {
+      const currentLogs = (await localforage.getItem(HAID_KEY)) || [];
+      let updatedLogs;
 
-      if (!userData) {
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('haid_logs')
-        .select('*')
-        .eq('user_id', userData.id)
-        .order('start_date', { ascending: false });
-
-      if (!error && data) {
-        setLogs(data);
-        setActivePeriod(data.find((item) => item.end_date === null) || null);
-      }
-    }
-    setLoading(false);
-  };
-
-  /** Menyimpan tanggal mulai atau selesai siklus */
-  const saveDate = async (actionType, inputDate) => {
-    if (!user) return { success: false };
-
-    if (isPWA) {
-      const localHaid = (await localforage.getItem('pwa_haid_logs')) || [];
-
-      if (actionType === 'start') {
-        const newLog = {
-          id: Date.now().toString(),
-          start_date: inputDate,
-          end_date: null,
-        };
-        const updated = [newLog, ...localHaid];
-        await localforage.setItem('pwa_haid_logs', updated);
-        setActivePeriod(newLog);
-        setLogs(updated);
-        return { success: true, type: 'start' };
-      }
-
-      if (actionType === 'end' && activePeriod) {
-        const updated = localHaid.map((l) =>
-          l.id === activePeriod.id ? { ...l, end_date: inputDate } : l,
+      if (newLog.id) {
+        updatedLogs = currentLogs.map((log) =>
+          log.id === newLog.id ? newLog : log,
         );
-        await localforage.setItem('pwa_haid_logs', updated);
-        setLogs(updated);
-        setActivePeriod(null);
-        return { success: true, type: 'end' };
-      }
-    } else {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('personal_code', user.personal_code)
-        .single();
-
-      if (actionType === 'start') {
-        const { data, error } = await supabase
-          .from('haid_logs')
-          .insert({
-            user_id: userData.id,
-            start_date: inputDate,
-            end_date: null,
-          })
-          .select()
-          .single();
-        if (!error) {
-          setActivePeriod(data);
-          setLogs((prev) => [data, ...prev]);
-          return { success: true, type: 'start' };
-        }
+      } else {
+        updatedLogs = [
+          { ...newLog, id: Date.now().toString() },
+          ...currentLogs,
+        ];
       }
 
-      if (actionType === 'end' && activePeriod) {
-        const { error } = await supabase
-          .from('haid_logs')
-          .update({ end_date: inputDate })
-          .eq('id', activePeriod.id);
-        if (!error) {
-          setLogs((prev) =>
-            prev.map((l) =>
-              l.id === activePeriod.id ? { ...l, end_date: inputDate } : l,
-            ),
-          );
-          setActivePeriod(null);
-          return { success: true, type: 'end' };
-        }
-      }
-    }
+      const sorted = updatedLogs.sort(
+        (a, b) => new Date(b.startDate) - new Date(a.startDate),
+      );
+      await localforage.setItem(HAID_KEY, sorted);
+      setLogs(sorted);
 
-    return { success: false };
-  };
-
-  /** Menghapus satu log berdasarkan ID */
-  const deleteLog = async (targetId) => {
-    if (isPWA) {
-      const localHaid = (await localforage.getItem('pwa_haid_logs')) || [];
-      const updated = localHaid.filter((l) => l.id !== targetId);
-      await localforage.setItem('pwa_haid_logs', updated);
-      setLogs(updated);
-      if (activePeriod?.id === targetId) setActivePeriod(null);
-    } else {
-      const { error } = await supabase
-        .from('haid_logs')
-        .delete()
-        .eq('id', targetId);
-      if (error) {
-        alert(`Gagal menghapus: ${error.message}`);
-        return;
-      }
-      setLogs((prev) => prev.filter((l) => l.id !== targetId));
-      if (activePeriod?.id === targetId) setActivePeriod(null);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
     }
   };
 
-  // ── Kalkulasi utilitas ──
+  const deleteLog = async (id) => {
+    try {
+      const currentLogs = (await localforage.getItem(HAID_KEY)) || [];
+      const updatedLogs = currentLogs.filter((log) => log.id !== id);
 
-  const getDuration = (start, end) => {
-    const endDate = end ? dayjs(end) : dayjs();
-    return dayjs(endDate).diff(dayjs(start), 'day') + 1;
+      await localforage.setItem(HAID_KEY, updatedLogs);
+      setLogs(updatedLogs);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error };
+    }
   };
 
-  const getQadhaDays = (start, end) => {
-    const s = dayjs(start);
-    const e = end ? dayjs(end) : dayjs();
-    if (e.isBefore(RAMADHAN_START, 'day') || s.isAfter(RAMADHAN_END, 'day'))
-      return 0;
-    const overlapStart = s.isAfter(RAMADHAN_START) ? s : RAMADHAN_START;
-    const overlapEnd = e.isBefore(RAMADHAN_END) ? e : RAMADHAN_END;
-    return overlapEnd.diff(overlapStart, 'day') + 1;
-  };
-
-  const totalMissedFasting = logs.reduce(
-    (acc, curr) => acc + getQadhaDays(curr.start_date, curr.end_date),
-    0,
-  );
-
-  return {
-    loading,
-    logs,
-    activePeriod,
-    saveDate,
-    deleteLog,
-    getDuration,
-    getQadhaDays,
-    totalMissedFasting,
-  };
+  return { logs, loading, fetchLogs, saveLog, deleteLog };
 }

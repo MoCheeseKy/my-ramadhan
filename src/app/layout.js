@@ -1,10 +1,8 @@
-import './globals.css'; // Pastikan Anda sudah memindahkan folder styles
+import './globals.css';
 import { Inter } from 'next/font/google';
 
-// Kita gunakan font Inter bawaan Next.js agar loading lebih cepat
 const inter = Inter({ subsets: ['latin'] });
 
-// Ini menggantikan tag <Head> untuk SEO dan PWA Manifest
 export const metadata = {
   title: 'MyRamadhan - Pendamping Ibadah',
   description:
@@ -24,7 +22,6 @@ export const metadata = {
   },
 };
 
-// Ini menggantikan tag <meta name="viewport">
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -38,7 +35,6 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    // Kita berikan class 'light' sebagai default, nanti bisa diubah ke 'dark' via state/localStorage
     <html lang='id' className='light' suppressHydrationWarning>
       <body
         suppressHydrationWarning

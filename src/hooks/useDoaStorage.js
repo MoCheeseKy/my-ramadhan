@@ -1,87 +1,49 @@
 'use client';
-import { supabase } from '@/lib/supabase';
 
-/**
- * useDoaStorage — menyediakan fungsi baca/tulis data Doa secara transparan:
- * gunakan Supabase jika user login, localStorage jika tidak.
- *
- * @param {object|null} user - User dari useUser()
- * @returns {object}         - { loadDoaData, saveBookmarks, saveCustomDoas, saveSettings }
- */
-const useDoaStorage = (user) => {
-  // ─── Read ────────────────────────────────────────────────────────────────────
+import localforage from 'localforage';
+
+export default function useDoaStorage() {
+  const BOOKMARKS_KEY = 'doa_bookmarks';
+  const LASTREAD_KEY = 'doa_lastread';
+  const SETTINGS_KEY = 'doa_settings';
 
   const loadDoaData = async () => {
-    if (user) {
-      const { data, error } = await supabase
-        .from('users')
-        .select('doa_bookmarks, doa_custom, doa_settings')
-        .eq('personal_code', user.personal_code)
-        .single();
-      if (error) return {};
-      return {
-        bookmarks: data?.doa_bookmarks || [],
-        customDoas: data?.doa_custom || [],
-        settings: data?.doa_settings || null,
-      };
-    }
-
-    return {
-      bookmarks:
-        JSON.parse(localStorage.getItem('myRamadhan_doa_bookmarks')) || [],
-      customDoas:
-        JSON.parse(localStorage.getItem('myRamadhan_doa_custom')) || [],
-      settings:
-        JSON.parse(localStorage.getItem('myRamadhan_doa_settings')) || null,
-    };
-  };
-
-  // ─── Write bookmarks ─────────────────────────────────────────────────────────
-
-  const saveBookmarks = async (newBookmarks) => {
-    localStorage.setItem(
-      'myRamadhan_doa_bookmarks',
-      JSON.stringify(newBookmarks),
-    );
-    if (user) {
-      await supabase
-        .from('users')
-        .update({ doa_bookmarks: newBookmarks })
-        .eq('personal_code', user.personal_code);
+    try {
+      const bookmarks = (await localforage.getItem(BOOKMARKS_KEY)) || [];
+      const lastRead = (await localforage.getItem(LASTREAD_KEY)) || null;
+      const settings = (await localforage.getItem(SETTINGS_KEY)) || null;
+      return { bookmarks, lastRead, settings };
+    } catch (error) {
+      return { bookmarks: [], lastRead: null, settings: null };
     }
   };
 
-  // ─── Write custom doas ───────────────────────────────────────────────────────
-
-  const saveCustomDoas = async (newCustomDoas) => {
-    localStorage.setItem(
-      'myRamadhan_doa_custom',
-      JSON.stringify(newCustomDoas),
-    );
-    if (user) {
-      await supabase
-        .from('users')
-        .update({ doa_custom: newCustomDoas })
-        .eq('personal_code', user.personal_code);
+  const saveBookmarksData = async (newBookmarks) => {
+    try {
+      await localforage.setItem(BOOKMARKS_KEY, newBookmarks);
+      return true;
+    } catch (error) {
+      return false;
     }
   };
 
-  // ─── Write settings ──────────────────────────────────────────────────────────
-
-  const saveSettings = async (newSettings) => {
-    localStorage.setItem(
-      'myRamadhan_doa_settings',
-      JSON.stringify(newSettings),
-    );
-    if (user) {
-      await supabase
-        .from('users')
-        .update({ doa_settings: newSettings })
-        .eq('personal_code', user.personal_code);
+  const saveLastRead = async (lastReadData) => {
+    try {
+      await localforage.setItem(LASTREAD_KEY, lastReadData);
+      return true;
+    } catch (error) {
+      return false;
     }
   };
 
-  return { loadDoaData, saveBookmarks, saveCustomDoas, saveSettings };
-};
+  const saveSettings = async (settingsData) => {
+    try {
+      await localforage.setItem(SETTINGS_KEY, settingsData);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
 
-export default useDoaStorage;
+  return { loadDoaData, saveBookmarksData, saveLastRead, saveSettings };
+}

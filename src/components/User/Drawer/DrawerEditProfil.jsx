@@ -17,25 +17,10 @@ import {
 import DrawerPanel from '@/components/_shared/DrawerPanel';
 import { CITIES } from '@/data/cities';
 
-/**
- * DrawerEditProfil — form untuk mengubah username, foto profil, dan kota.
- *
- * @prop {boolean}  open            - State buka/tutup
- * @prop {Function} onClose         - Tutup drawer
- * @prop {object}   profileData     - Data profil saat ini { name, avatar }
- * @prop {string}   editName        - State controlled untuk nama
- * @prop {Function} setEditName
- * @prop {string}   editLocation    - State controlled untuk kota
- * @prop {Function} setEditLocation
- * @prop {boolean}  isUploading     - Loading saat upload foto
- * @prop {boolean}  isSaving        - Loading saat simpan profil
- * @prop {Function} onUploadPhoto   - Handler file input foto
- * @prop {Function} onSaveProfile   - Handler simpan profil (harus me-return Promise yang bisa di catch)
- */
 const DrawerEditProfil = ({
   open,
   onClose,
-  profileData,
+  profileData = {},
   editName,
   setEditName,
   editLocation,
@@ -83,7 +68,7 @@ const DrawerEditProfil = ({
       {/* Avatar & tombol upload foto */}
       <div className='flex flex-col items-center mb-6 mt-2'>
         <div className='relative w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center border-4 border-white dark:border-slate-700 shadow-md overflow-hidden mb-3'>
-          {profileData.avatar ? (
+          {profileData?.avatar ? (
             <Image
               src={profileData.avatar}
               alt='Avatar'
@@ -148,7 +133,7 @@ const DrawerEditProfil = ({
           </label>
           <input
             type='text'
-            value={editName}
+            value={editName || ''}
             onChange={(e) => setEditName(e.target.value)}
             className='w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#1e3a8a] dark:focus:ring-blue-500 outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500'
             placeholder='Masukkan nama pengguna'
@@ -236,7 +221,10 @@ const DrawerEditProfil = ({
         <button
           onClick={handleFormSubmit}
           disabled={
-            isSaving || !editName.trim() || alertMsg?.type === 'success'
+            isSaving ||
+            !editName ||
+            !editName.trim() ||
+            alertMsg?.type === 'success'
           }
           className='w-full py-3.5 mt-4 bg-[#1e3a8a] dark:bg-blue-700 text-white font-bold rounded-xl hover:bg-[#162d6e] dark:hover:bg-blue-600 transition-colors disabled:opacity-50'
         >

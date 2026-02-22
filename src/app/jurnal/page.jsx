@@ -9,19 +9,13 @@ import {
   Wind,
   ChevronRight,
   PenLine,
-  Lock,
   BookOpen,
   X,
   Sparkles,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { moods } from '@/data/journalPrompts';
-import ProtectedRoute from '@/components/ProtectedRoute';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
-
-import useUser from '@/hooks/useUser';
-import useAppMode from '@/hooks/useAppMode';
 import localforage from 'localforage';
 
 dayjs.locale('id');
@@ -73,452 +67,189 @@ const categories = [
   },
 ];
 
-const moodColors = {
-  happy: {
-    bg: 'bg-amber-100 dark:bg-amber-900/40',
-    text: 'text-amber-700 dark:text-amber-400',
-  },
-  calm: {
-    bg: 'bg-sky-100 dark:bg-sky-900/40',
-    text: 'text-sky-700 dark:text-sky-400',
-  },
-  grateful: {
-    bg: 'bg-pink-100 dark:bg-pink-900/40',
-    text: 'text-pink-700 dark:text-pink-400',
-  },
-  sad: {
-    bg: 'bg-slate-100 dark:bg-slate-800',
-    text: 'text-slate-600 dark:text-slate-400',
-  },
-  tired: {
-    bg: 'bg-orange-100 dark:bg-orange-900/40',
-    text: 'text-orange-700 dark:text-orange-400',
-  },
-  angry: {
-    bg: 'bg-red-100 dark:bg-red-900/40',
-    text: 'text-red-700 dark:text-red-400',
-  },
-};
-
-export default function JournalDashboard() {
+export default function JurnalPage() {
   const router = useRouter();
-
-  const { user, loading: userLoading } = useUser();
-  const { isPWA } = useAppMode();
-
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [filterDate, setFilterDate] = useState('all');
-  const [selectedEntry, setSelectedEntry] = useState(null);
 
+  // Function untuk memuat list jurnal secara lokal
   useEffect(() => {
-    if (!userLoading) {
-      if (!user) router.push('/auth/login');
-      else fetchEntries();
-    }
-  }, [user, userLoading, isPWA]);
-
-  const fetchEntries = async () => {
-    setLoading(true);
-    if (isPWA) {
-      const localJournals = (await localforage.getItem('pwa_journals')) || [];
-      setEntries(localJournals);
-    } else {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('personal_code', user.personal_code)
-        .single();
-      if (!userData) {
+    const fetchEntries = async () => {
+      setLoading(true);
+      try {
+        const data = (await localforage.getItem('journal_entries')) || [];
+        const sortedData = data.sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at),
+        );
+        setEntries(sortedData);
+      } catch (error) {
+        console.error(error);
+      } finally {
         setLoading(false);
-        return;
       }
-      const { data, error } = await supabase
-        .from('journal_entries')
-        .select('*')
-        .eq('user_id', userData.id)
-        .order('created_at', { ascending: false });
-      if (!error && data) setEntries(data);
+    };
+    fetchEntries();
+  }, []);
+
+  const handleDelete = async (id) => {
+    try {
+      const newEntries = entries.filter((e) => e.id !== id);
+      await localforage.setItem('journal_entries', newEntries);
+      setEntries(newEntries);
+    } catch (error) {
+      console.error('Failed to delete', error);
     }
-    setLoading(false);
   };
 
   const getMood = (moodId) => moods.find((m) => m.id === moodId);
   const getCat = (catId) => categories.find((c) => c.id === catId);
 
-  const uniqueDates = Array.from(
-    new Set(entries.map((e) => dayjs(e.created_at).format('YYYY-MM-DD'))),
-  );
-
-  const filteredEntries = entries.filter((entry) => {
-    const matchCat =
-      filterCategory === 'all' || entry.category === filterCategory;
-    const matchDate =
-      filterDate === 'all' ||
-      dayjs(entry.created_at).format('YYYY-MM-DD') === filterDate;
-    return matchCat && matchDate;
-  });
-
-  const groupedEntries = filteredEntries.reduce((acc, entry) => {
-    const dateStr = dayjs(entry.created_at).format('dddd, DD MMMM YYYY');
-    if (!acc[dateStr]) acc[dateStr] = [];
-    acc[dateStr].push(entry);
-    return acc;
-  }, {});
-
-  const handleDiscussWithRamatalk = () => {
-    if (!selectedEntry) return;
-    const contextData = {
-      title: selectedEntry.title,
-      content: selectedEntry.content,
-      mood: getMood(selectedEntry.mood)?.label || 'Netral',
-      category: getCat(selectedEntry.category)?.title || 'Jurnal',
-    };
-    sessionStorage.setItem(
-      'ramatalk_journal_context',
-      JSON.stringify(contextData),
-    );
-    router.push('/ramatalk');
-  };
-
   return (
-    <ProtectedRoute>
-      <div className='min-h-screen bg-[#FAFAF7] dark:bg-slate-950 text-slate-800 dark:text-slate-200 pb-28 transition-colors duration-300'>
-        <div className='fixed inset-0 pointer-events-none -z-10'>
-          <div className='absolute top-0 right-0 w-80 h-80 bg-violet-100/40 dark:bg-violet-900/20 rounded-full blur-3xl' />
-          <div className='absolute bottom-0 left-0 w-96 h-96 bg-blue-100/30 dark:bg-blue-900/20 rounded-full blur-3xl' />
+    <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 pb-20'>
+      <title>Jurnal Refleksi - MyRamadhan</title>
+      <header className='sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-4 flex items-center justify-between'>
+        <div className='flex items-center gap-3'>
+          <button
+            onClick={() => router.push('/')}
+            className='p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors'
+          >
+            <ArrowLeft
+              size={20}
+              className='text-slate-600 dark:text-slate-300'
+            />
+          </button>
+          <h1 className='font-bold text-lg text-slate-800 dark:text-slate-100'>
+            Jurnal Refleksi
+          </h1>
+        </div>
+      </header>
+
+      <main className='max-w-md md:max-w-3xl lg:max-w-5xl mx-auto p-4 md:p-6 lg:p-8 space-y-8'>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className='pt-2 md:pt-4'
+        >
+          <div className='inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full text-xs font-bold mb-3 border border-indigo-100 dark:border-indigo-800'>
+            <Sparkles size={12} /> Ruang Aman
+          </div>
+          <h2 className='text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-100'>
+            Bagaimana perasaanmu <br className='md:hidden' />{' '}
+            <span className='text-[#1e3a8a] dark:text-blue-400'>hari ini?</span>
+          </h2>
+        </motion.div>
+
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+          {categories.map((cat, idx) => (
+            <motion.button
+              key={cat.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              onClick={() => router.push(`/jurnal/write/${cat.id}`)}
+              className={`relative p-5 rounded-3xl border-2 transition-all hover:scale-105 active:scale-95 text-left overflow-hidden ${cat.bg} ${cat.border}`}
+            >
+              <div
+                className={`w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center mb-4 shadow-sm ${cat.text}`}
+              >
+                <cat.icon size={24} />
+              </div>
+              <h3 className={`font-bold text-lg mb-1 ${cat.text}`}>
+                {cat.title}
+              </h3>
+              <p className='text-xs font-medium text-slate-500 dark:text-slate-400 opacity-80'>
+                {cat.subtitle}
+              </p>
+              <ChevronRight
+                size={18}
+                className={`absolute bottom-5 right-5 ${cat.text} opacity-50`}
+              />
+            </motion.button>
+          ))}
         </div>
 
-        {/* HEADER ADAPTIF */}
-        <header className='sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800'>
-          <div className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-6 py-4 flex items-center gap-4'>
-            <button
-              onClick={() => router.push('/')}
-              className='p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors'
-            >
-              <ArrowLeft
-                size={20}
-                className='text-slate-600 dark:text-slate-400'
-              />
-            </button>
-            <div>
-              <h1 className='font-bold text-xl flex items-center gap-2 text-slate-800 dark:text-slate-100'>
-                Jurnal Refleksi
-              </h1>
+        <div className='pt-4 border-t border-slate-200 dark:border-slate-800'>
+          <h3 className='font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center justify-between'>
+            <span>Catatan Sebelumnya</span>
+            <span className='text-xs font-medium text-slate-500 dark:text-slate-400 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-full'>
+              {entries.length} Catatan
+            </span>
+          </h3>
+
+          {loading ? (
+            <div className='space-y-4'>
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className='h-32 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-3xl'
+                />
+              ))}
             </div>
-          </div>
-        </header>
-
-        {/* KONTEN UTAMA ADAPTIF */}
-        <main className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-5 pt-6 md:pt-8 lg:pt-10'>
-          <div className='flex flex-col lg:flex-row gap-8 lg:gap-12'>
-            {/* --- KOLOM KIRI / ATAS (KATEGORI) --- */}
-            <div className='w-full lg:w-[350px] xl:w-[400px] flex-shrink-0'>
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className='mb-6 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex items-center gap-3'
-              >
-                <div className='bg-white dark:bg-slate-700 p-2 rounded-lg text-slate-500 dark:text-slate-400 shadow-sm'>
-                  <Lock size={16} />
-                </div>
-                <p className='text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed'>
-                  Ruang amanmu. Jurnal ini tersimpan privat dan{' '}
-                  <strong className='text-slate-700 dark:text-slate-300'>
-                    hanya bisa dibaca olehmu
-                  </strong>
-                  .
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                className='mb-6 lg:mb-8'
-              >
-                <h2 className='text-2xl lg:text-3xl font-bold text-slate-800 dark:text-slate-100 leading-snug'>
-                  Apa yang ada <br />
-                  <span className='text-[#1e3a8a] dark:text-blue-400'>
-                    di benakmu hari ini?
-                  </span>
-                </h2>
-              </motion.div>
-
-              {/* GRID KATEGORI: 1 Kolom Mobile, 2 Kolom Tablet, 1 Kolom Desktop Sidebar */}
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3 md:gap-4 mb-10 lg:mb-0'>
-                {categories.map((cat, i) => (
-                  <motion.button
-                    key={cat.id}
-                    initial={{ opacity: 0, x: -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                    onClick={() => router.push(`/jurnal/write/${cat.id}`)}
-                    className={`w-full h-full flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border ${cat.border} shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group`}
-                  >
-                    <div
-                      className={`w-12 h-12 rounded-xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center shrink-0 shadow-lg`}
-                      style={{ boxShadow: `0 8px 20px -4px ${cat.accent}40` }}
+          ) : entries.length > 0 ? (
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <AnimatePresence>
+                {entries.map((entry) => {
+                  const mood = getMood(entry.mood);
+                  const cat = getCat(entry.category);
+                  return (
+                    <motion.div
+                      key={entry.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className='bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm relative group'
                     >
-                      <cat.icon size={20} className='text-white' />
-                    </div>
-                    <div className='flex-1 text-left'>
-                      <p className='font-bold text-sm text-slate-800 dark:text-slate-100'>
-                        {cat.title}
-                      </p>
-                      <p className='text-xs text-slate-400 dark:text-slate-500 mt-0.5'>
-                        {cat.subtitle}
-                      </p>
-                    </div>
-                    <div
-                      className={`w-8 h-8 rounded-xl ${cat.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}
-                    >
-                      <ChevronRight size={14} className={cat.text} />
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            {/* --- KOLOM KANAN / BAWAH (DAFTAR JURNAL) --- */}
-            <div className='flex-1'>
-              <div className='flex items-center justify-between mb-4'>
-                <p className='text-[11px] lg:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]'>
-                  Jejak Pikiranmu
-                </p>
-                {entries.length > 0 && (
-                  <span className='text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded-full'>
-                    {entries.length} entri
-                  </span>
-                )}
-              </div>
-
-              {entries.length > 0 && (
-                <div className='flex flex-col sm:flex-row items-center gap-3 mb-6'>
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className='w-full sm:flex-1 text-xs lg:text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-[#1e3a8a] dark:focus:border-blue-400 shadow-sm appearance-none cursor-pointer'
-                  >
-                    <option value='all'>Semua Kategori</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.title}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={filterDate}
-                    onChange={(e) => setFilterDate(e.target.value)}
-                    className='w-full sm:flex-1 text-xs lg:text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:border-[#1e3a8a] dark:focus:border-blue-400 shadow-sm appearance-none cursor-pointer'
-                  >
-                    <option value='all'>Semua Waktu</option>
-                    {uniqueDates.map((date) => (
-                      <option key={date} value={date}>
-                        {dayjs(date).format('DD MMM YYYY')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {loading ? (
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4'>
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className='h-32 bg-white dark:bg-slate-800 rounded-2xl animate-pulse border border-slate-100 dark:border-slate-700'
-                    />
-                  ))}
-                </div>
-              ) : entries.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className='text-center py-14 lg:py-24 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem]'
-                >
-                  <div className='w-16 h-16 lg:w-20 lg:h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4'>
-                    <PenLine
-                      size={32}
-                      className='text-slate-300 dark:text-slate-600'
-                    />
-                  </div>
-                  <p className='text-sm lg:text-base font-semibold text-slate-400 dark:text-slate-500'>
-                    Belum ada tulisan
-                  </p>
-                  <p className='text-xs lg:text-sm text-slate-400 dark:text-slate-600 mt-1'>
-                    Pilih salah satu kategori di atas/samping untuk memulai
-                  </p>
-                </motion.div>
-              ) : Object.keys(groupedEntries).length === 0 ? (
-                <div className='text-center py-10'>
-                  <p className='text-sm font-semibold text-slate-400 dark:text-slate-500'>
-                    Tidak ada yang cocok
-                  </p>
-                  <p className='text-xs text-slate-400 dark:text-slate-600 mt-1'>
-                    Coba ubah filter pencarianmu.
-                  </p>
-                </div>
-              ) : (
-                <div className='space-y-8'>
-                  {Object.entries(groupedEntries).map(
-                    ([dateStr, dateEntries]) => (
-                      <div key={dateStr}>
-                        <div className='flex items-center gap-3 mb-4'>
-                          <p className='text-[10px] lg:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest'>
-                            {dateStr}
+                      <button
+                        onClick={() => handleDelete(entry.id)}
+                        className='absolute top-4 right-4 p-2 text-rose-500 bg-rose-50 dark:bg-rose-900/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity'
+                      >
+                        <X size={14} />
+                      </button>
+                      <div className='flex items-center gap-3 mb-3'>
+                        <span className='text-2xl'>{mood?.icon || '💭'}</span>
+                        <div>
+                          <p
+                            className={`text-[10px] font-bold uppercase tracking-wider ${cat?.text || 'text-slate-500'}`}
+                          >
+                            {cat?.title || 'Catatan'}
                           </p>
-                          <div className='flex-1 h-px bg-slate-200 dark:bg-slate-800' />
-                        </div>
-
-                        {/* GRID ENTRI JURNAL: 1 Kolom Mobile, 2 Kolom Tablet & Desktop */}
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4'>
-                          {dateEntries.map((entry, i) => {
-                            const mood = getMood(entry.mood);
-                            const cat = getCat(entry.category);
-                            const moodStyle = moodColors[entry.mood] || {
-                              bg: 'bg-slate-100 dark:bg-slate-800',
-                              text: 'text-slate-600 dark:text-slate-400',
-                            };
-                            return (
-                              <motion.button
-                                key={entry.id}
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.05 }}
-                                onClick={() => setSelectedEntry(entry)}
-                                className='w-full text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-1 transition-all group h-full flex flex-col'
-                              >
-                                {cat && (
-                                  <div
-                                    className={`h-1.5 w-full bg-gradient-to-r ${cat.gradient}`}
-                                  />
-                                )}
-                                <div className='p-4 flex-1 flex flex-col'>
-                                  <div className='flex items-start justify-between mb-3 gap-2'>
-                                    <div className='flex items-center gap-2 flex-wrap'>
-                                      {cat && (
-                                        <span
-                                          className={`text-[9px] lg:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${cat.bg} ${cat.text}`}
-                                        >
-                                          {cat.title}
-                                        </span>
-                                      )}
-                                      {mood && (
-                                        <span
-                                          className={`text-[9px] lg:text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${moodStyle.bg} ${moodStyle.text}`}
-                                        >
-                                          {mood.icon} {mood.label}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <span className='text-[10px] text-slate-400 dark:text-slate-500 font-semibold flex items-center gap-1 shrink-0'>
-                                      {dayjs(entry.created_at).format('HH:mm')}
-                                      <ChevronRight
-                                        size={12}
-                                        className='opacity-0 group-hover:opacity-100 transition-opacity'
-                                      />
-                                    </span>
-                                  </div>
-                                  <h3 className='font-bold text-slate-800 dark:text-slate-100 text-sm lg:text-base line-clamp-1 mb-1.5'>
-                                    {entry.title || 'Tanpa Judul'}
-                                  </h3>
-                                  <p className='text-xs lg:text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed flex-1'>
-                                    {entry.content}
-                                  </p>
-                                </div>
-                              </motion.button>
-                            );
-                          })}
+                          <p className='text-xs text-slate-400 dark:text-slate-500 font-medium'>
+                            {dayjs(entry.created_at).format(
+                              'DD MMM YYYY, HH:mm',
+                            )}
+                          </p>
                         </div>
                       </div>
-                    ),
-                  )}
-                </div>
-              )}
+                      <h4 className='font-bold text-slate-800 dark:text-slate-100 mb-2'>
+                        {entry.title}
+                      </h4>
+                      <p className='text-sm text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-3'>
+                        {entry.content}
+                      </p>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
-          </div>
-        </main>
-      </div>
-
-      {/* ── DETAIL DRAWER DENGAN TOMBOL RAMATALK ── */}
-      <AnimatePresence>
-        {selectedEntry && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedEntry(null)}
-              className='fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50'
-            />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className='fixed bottom-0 left-0 right-0 max-w-md mx-auto h-[85vh] bg-white dark:bg-slate-900 rounded-t-[2.5rem] shadow-2xl z-50 flex flex-col overflow-hidden transition-colors duration-300'
-            >
-              <div className='px-6 py-5 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-900/50'>
-                <div className='w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-5' />
-                <div className='flex justify-between items-start mb-3'>
-                  <div className='flex items-center gap-2 flex-wrap'>
-                    {getCat(selectedEntry.category) && (
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${getCat(selectedEntry.category).bg} ${getCat(selectedEntry.category).text}`}
-                      >
-                        {getCat(selectedEntry.category).title}
-                      </span>
-                    )}
-                    {getMood(selectedEntry.mood) && (
-                      <span
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${moodColors[selectedEntry.mood]?.bg || 'bg-slate-100 dark:bg-slate-800'} ${moodColors[selectedEntry.mood]?.text || 'text-slate-600 dark:text-slate-400'}`}
-                      >
-                        {getMood(selectedEntry.mood).icon}{' '}
-                        {getMood(selectedEntry.mood).label}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setSelectedEntry(null)}
-                    className='w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors'
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                <h2 className='text-xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight leading-snug'>
-                  {selectedEntry.title || 'Tanpa Judul'}
-                </h2>
-                <p className='text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium'>
-                  {dayjs(selectedEntry.created_at).format(
-                    'dddd, DD MMMM YYYY • HH:mm',
-                  )}
-                </p>
+          ) : (
+            <div className='text-center py-12 px-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl'>
+              <div className='w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3'>
+                <BookOpen
+                  size={24}
+                  className='text-slate-300 dark:text-slate-600'
+                />
               </div>
-
-              <div className='flex-1 overflow-y-auto px-6 py-6 custom-scrollbar'>
-                <p className='text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium pb-4'>
-                  {selectedEntry.content}
-                </p>
-              </div>
-
-              <div className='px-6 pb-8 pt-4 bg-gradient-to-t from-white dark:from-slate-900 via-white dark:via-slate-900 to-transparent border-t border-slate-50 dark:border-slate-800 shrink-0'>
-                <button
-                  onClick={handleDiscussWithRamatalk}
-                  className='w-full py-4 bg-indigo-50 dark:bg-indigo-900/40 text-[#1e3a8a] dark:text-blue-400 border border-indigo-100 dark:border-indigo-800 font-bold text-sm rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-all shadow-sm'
-                >
-                  <Sparkles
-                    size={16}
-                    className='text-indigo-500 dark:text-indigo-400'
-                  />
-                  Diskusikan perasaan ini dengan Ramatalk
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </ProtectedRoute>
+              <h4 className='font-bold text-slate-700 dark:text-slate-200 mb-1'>
+                Belum ada tulisan
+              </h4>
+              <p className='text-sm text-slate-500 dark:text-slate-400'>
+                Mulailah menulis apa yang kamu rasakan hari ini.
+              </p>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }

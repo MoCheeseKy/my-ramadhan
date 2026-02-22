@@ -1,88 +1,49 @@
 'use client';
 
-import { supabase } from '@/lib/supabase';
+import localforage from 'localforage';
 
-/**
- * useHaditsStorage — read/write data Hadits secara transparan:
- * Supabase jika user login, localStorage jika tidak.
- *
- * Catatan: settings berbagi kolom `doa_settings` di Supabase
- * karena strukturnya kompatibel dengan settings Doa.
- *
- * @param {object|null} user
- * @returns {{ loadHaditsData, saveBookmarks, saveLastRead, saveSettings }}
- */
-const useHaditsStorage = (user) => {
-  // ─── Read ─────────────────────────────────────────────────────────────────
+export default function useHaditsStorage() {
+  const BOOKMARKS_KEY = 'hadits_bookmarks';
+  const LASTREAD_KEY = 'hadits_lastread';
+  const SETTINGS_KEY = 'hadits_settings';
 
   const loadHaditsData = async () => {
-    if (user) {
-      const { data, error } = await supabase
-        .from('users')
-        .select('hadits_bookmarks, hadits_last_read, doa_settings')
-        .eq('personal_code', user.personal_code)
-        .single();
-      if (error) return {};
-      return {
-        bookmarks: data?.hadits_bookmarks || [],
-        lastRead: data?.hadits_last_read || null,
-        settings: data?.doa_settings || null,
-      };
-    }
-
-    return {
-      bookmarks:
-        JSON.parse(localStorage.getItem('myRamadhan_hadits_bookmarks')) || [],
-      lastRead:
-        JSON.parse(localStorage.getItem('myRamadhan_hadits_lastread')) || null,
-      settings:
-        JSON.parse(localStorage.getItem('myRamadhan_doa_settings')) || null,
-    };
-  };
-
-  // ─── Write bookmarks ──────────────────────────────────────────────────────
-
-  const saveBookmarks = async (newBookmarks) => {
-    localStorage.setItem(
-      'myRamadhan_hadits_bookmarks',
-      JSON.stringify(newBookmarks),
-    );
-    if (user) {
-      await supabase
-        .from('users')
-        .update({ hadits_bookmarks: newBookmarks })
-        .eq('personal_code', user.personal_code);
+    try {
+      const bookmarks = (await localforage.getItem(BOOKMARKS_KEY)) || [];
+      const lastRead = (await localforage.getItem(LASTREAD_KEY)) || null;
+      const settings = (await localforage.getItem(SETTINGS_KEY)) || null;
+      return { bookmarks, lastRead, settings };
+    } catch (error) {
+      return { bookmarks: [], lastRead: null, settings: null };
     }
   };
 
-  // ─── Write lastRead ───────────────────────────────────────────────────────
-
-  const saveLastRead = async (data) => {
-    localStorage.setItem('myRamadhan_hadits_lastread', JSON.stringify(data));
-    if (user) {
-      await supabase
-        .from('users')
-        .update({ hadits_last_read: data })
-        .eq('personal_code', user.personal_code);
+  const saveBookmarksData = async (newBookmarks) => {
+    try {
+      await localforage.setItem(BOOKMARKS_KEY, newBookmarks);
+      return true;
+    } catch (error) {
+      return false;
     }
   };
 
-  // ─── Write settings ───────────────────────────────────────────────────────
-
-  const saveSettings = async (newSettings) => {
-    localStorage.setItem(
-      'myRamadhan_doa_settings',
-      JSON.stringify(newSettings),
-    );
-    if (user) {
-      await supabase
-        .from('users')
-        .update({ doa_settings: newSettings })
-        .eq('personal_code', user.personal_code);
+  const saveLastRead = async (lastReadData) => {
+    try {
+      await localforage.setItem(LASTREAD_KEY, lastReadData);
+      return true;
+    } catch (error) {
+      return false;
     }
   };
 
-  return { loadHaditsData, saveBookmarks, saveLastRead, saveSettings };
-};
+  const saveSettings = async (settingsData) => {
+    try {
+      await localforage.setItem(SETTINGS_KEY, settingsData);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
 
-export default useHaditsStorage;
+  return { loadHaditsData, saveBookmarksData, saveLastRead, saveSettings };
+}

@@ -33,8 +33,8 @@ export default function JuzReader() {
   const [jumpAyat, setJumpAyat] = useState('');
 
   // ─── Hooks ────────────────────────────────────────────────────────────────
-  const { settings, toggleSetting, setArabSize } = useReaderSettings(user);
-  const storage = useQuranStorage(user);
+  const { settings, toggleSetting, setArabSize } = useReaderSettings();
+  const storage = useQuranStorage();
 
   const [bookmarks, setBookmarks] = useState([]);
   const [lastRead, setLastRead] = useState(null);
@@ -54,7 +54,6 @@ export default function JuzReader() {
     handlePlayAudio,
     closePlayer,
   } = useReaderActions({
-    user,
     bookmarks,
     setBookmarks,
     setLastRead,

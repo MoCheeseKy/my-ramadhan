@@ -30,8 +30,8 @@ export default function SurahReader() {
   const [jumpNumber, setJumpNumber] = useState('');
 
   // ─── Hooks ────────────────────────────────────────────────────────────────
-  const { settings, toggleSetting, setArabSize } = useReaderSettings(user);
-  const storage = useQuranStorage(user);
+  const { settings, toggleSetting, setArabSize } = useReaderSettings();
+  const storage = useQuranStorage();
 
   const [bookmarks, setBookmarks] = useState([]);
   const [lastRead, setLastRead] = useState(null);
@@ -46,7 +46,6 @@ export default function SurahReader() {
     handlePlayAudio,
     closePlayer,
   } = useReaderActions({
-    user,
     bookmarks,
     setBookmarks,
     setLastRead,

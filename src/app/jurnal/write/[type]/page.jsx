@@ -10,12 +10,7 @@ import {
   Feather,
   MessageSquarePlus,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { journalPrompts, moods } from '@/data/journalPrompts';
-
-// --- TAMBAHAN IMPORT LOKAL ---
-import useUser from '@/hooks/useUser';
-import useAppMode from '@/hooks/useAppMode';
 import localforage from 'localforage';
 
 const catStyles = {
@@ -25,7 +20,6 @@ const catStyles = {
       'from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40',
     border: 'border-blue-100 dark:border-blue-800',
     accent: 'text-blue-700 dark:text-blue-400',
-    ring: 'focus:ring-blue-300 dark:focus:ring-blue-700',
     shadow: 'rgba(30,58,138,0.2)',
   },
   syukur: {
@@ -34,7 +28,6 @@ const catStyles = {
       'from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40',
     border: 'border-emerald-100 dark:border-emerald-800',
     accent: 'text-emerald-700 dark:text-emerald-400',
-    ring: 'focus:ring-emerald-300 dark:focus:ring-emerald-700',
     shadow: 'rgba(5,150,105,0.2)',
   },
   ikhlaskan: {
@@ -42,7 +35,6 @@ const catStyles = {
     light: 'from-rose-50 to-pink-50 dark:from-rose-950/40 dark:to-pink-950/40',
     border: 'border-rose-100 dark:border-rose-800',
     accent: 'text-rose-600 dark:text-rose-400',
-    ring: 'focus:ring-rose-300 dark:focus:ring-rose-700',
     shadow: 'rgba(225,29,72,0.2)',
   },
   pre_ramadhan: {
@@ -51,7 +43,6 @@ const catStyles = {
       'from-violet-50 to-indigo-50 dark:from-violet-950/40 dark:to-indigo-950/40',
     border: 'border-violet-100 dark:border-violet-800',
     accent: 'text-violet-600 dark:text-violet-400',
-    ring: 'focus:ring-violet-300 dark:focus:ring-violet-700',
     shadow: 'rgba(124,58,237,0.2)',
   },
   bebas: {
@@ -60,7 +51,6 @@ const catStyles = {
       'from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40',
     border: 'border-amber-100 dark:border-amber-800',
     accent: 'text-amber-700 dark:text-amber-400',
-    ring: 'focus:ring-amber-300 dark:focus:ring-amber-700',
     shadow: 'rgba(217,119,6,0.2)',
   },
 };
@@ -69,10 +59,6 @@ export default function WriteJournal() {
   const router = useRouter();
   const { type } = useParams();
   const textareaRef = useRef(null);
-
-  // --- INTEGRASI HOOK ---
-  const { user } = useUser();
-  const { isPWA } = useAppMode();
 
   const [prompt, setPrompt] = useState('');
   const [title, setTitle] = useState('');
@@ -100,12 +86,13 @@ export default function WriteJournal() {
     textareaRef.current?.focus();
   };
 
+  // Function untuk menyimpan entri jurnal ke memori lokal
   const handleSave = async () => {
-    if (!content.trim() || !user || isSubmitting) return;
+    if (!content.trim() || isSubmitting) return;
     setIsSubmitting(true);
     const finalTitle = title.trim() ? title : 'Catatan Harian';
 
-    if (isPWA) {
+    try {
       const newEntry = {
         id: Date.now().toString(),
         category: type,
@@ -114,32 +101,15 @@ export default function WriteJournal() {
         mood: selectedMood,
         created_at: new Date().toISOString(),
       };
-      const journals = (await localforage.getItem('pwa_journals')) || [];
+      const journals = (await localforage.getItem('journal_entries')) || [];
       journals.unshift(newEntry);
-      await localforage.setItem('pwa_journals', journals);
+      await localforage.setItem('journal_entries', journals);
 
       setSaved(true);
       setTimeout(() => router.push('/jurnal'), 800);
-    } else {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('personal_code', user.personal_code)
-        .single();
-      const { error } = await supabase.from('journal_entries').insert({
-        user_id: userData.id,
-        category: type,
-        title: finalTitle,
-        content,
-        mood: selectedMood,
-      });
-
-      if (!error) {
-        setSaved(true);
-        setTimeout(() => router.push('/jurnal'), 800);
-      } else {
-        setIsSubmitting(false);
-      }
+    } catch (error) {
+      console.error(error);
+      setIsSubmitting(false);
     }
   };
 
@@ -151,6 +121,8 @@ export default function WriteJournal() {
 
   return (
     <div className='min-h-screen bg-[#FAFAF7] dark:bg-slate-950 flex flex-col transition-colors duration-300'>
+      <title>{catData.title} — MyRamadhan</title>
+
       <div className='fixed inset-0 pointer-events-none -z-10 overflow-hidden'>
         <div
           className={`absolute -top-32 -right-32 w-80 h-80 bg-gradient-to-br ${style.light} rounded-full blur-3xl opacity-80`}
@@ -182,14 +154,9 @@ export default function WriteJournal() {
         </div>
       </header>
 
-      {/* ADAPTIVE CONTAINER */}
       <main className='flex-1 max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto w-full px-5 pt-6 pb-32'>
-        {/* GRID LAYOUT UNTUK DESKTOP */}
         <div className='flex flex-col lg:flex-row gap-6 lg:gap-8'>
-          {/* KOLOM KANAN (SIDEBAR) DI DESKTOP */}
           <div className='w-full lg:w-[350px] flex-shrink-0 flex flex-col gap-6 order-1 lg:order-2'>
-            {/* ── PROMPT CARD WITH "USE PROMPT" ACTION ── */}
-            {/* Urutan ke-2 di Mobile (Bawah Mood), Urutan ke-1 di Tablet/Desktop (Atas Mood) */}
             <div
               className={`order-2 md:order-1 relative bg-gradient-to-br ${style.light} border ${style.border} rounded-2xl p-4`}
             >
@@ -215,12 +182,10 @@ export default function WriteJournal() {
                 <button
                   onClick={randomizePrompt}
                   className='p-2 bg-white/70 dark:bg-slate-800/70 rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-colors shrink-0 mt-3'
-                  title='Ganti ide'
                 >
                   <RefreshCw size={14} className={style.accent} />
                 </button>
               </div>
-
               <button
                 onClick={usePromptText}
                 className={`w-full py-2 bg-white/60 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-700 rounded-xl text-xs font-bold ${style.accent} flex items-center justify-center gap-2 border border-white/40 dark:border-slate-700 transition-colors shadow-sm`}
@@ -229,8 +194,6 @@ export default function WriteJournal() {
               </button>
             </div>
 
-            {/* ── MOOD SELECTOR ── */}
-            {/* Urutan ke-1 di Mobile (Atas Prompt), Urutan ke-2 di Tablet/Desktop (Bawah Prompt) */}
             <div className='order-1 md:order-1 lg:order-2'>
               <p className='text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-3'>
                 Bagaimana rasanya hari ini?
@@ -244,17 +207,13 @@ export default function WriteJournal() {
                     }
                     className={`flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl border transition-all shrink-0 md:w-full ${
                       selectedMood === m.id
-                        ? `bg-[#1e3a8a] dark:bg-blue-600 border-slate-200 dark:border-slate-700 shadow-md scale-105`
+                        ? 'bg-[#1e3a8a] dark:bg-blue-600 border-slate-200 dark:border-slate-700 shadow-md scale-105'
                         : 'bg-white/50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 opacity-60 hover:opacity-100'
                     }`}
                   >
                     <span className='text-xl leading-none'>{m.icon}</span>
                     <span
-                      className={`text-[9px] font-bold ${
-                        selectedMood === m.id
-                          ? 'text-white'
-                          : 'text-slate-400 dark:text-slate-500'
-                      }`}
+                      className={`text-[9px] font-bold ${selectedMood === m.id ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}
                     >
                       {m.label}
                     </span>
@@ -264,27 +223,20 @@ export default function WriteJournal() {
             </div>
           </div>
 
-          {/* PEMISAH (Hanya muncul di Mobile & Tablet, sembunyi di Desktop) */}
           <div className='flex items-center gap-3 mb-1 lg:hidden order-2 lg:order-none mt-2'>
             <div className='flex-1 h-px bg-slate-100 dark:bg-slate-800' />
             <Feather size={14} className='text-slate-300 dark:text-slate-600' />
             <div className='flex-1 h-px bg-slate-100 dark:bg-slate-800' />
           </div>
 
-          {/* KOLOM KIRI (UTAMA) DI DESKTOP: AREA MENULIS */}
           <div className='relative flex flex-col gap-3 flex-1 order-3 lg:order-1'>
-            {/* KOLOM JUDUL KUSTOM */}
             <input
               type='text'
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder='Tulis judul catatanmu...'
-              className={`w-full px-5 py-3.5 text-base font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 bg-white/60 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-200 dark:focus:ring-slate-700 backdrop-blur-sm transition-all ${
-                title ? style.accent : ''
-              }`}
+              className={`w-full px-5 py-3.5 text-base font-bold text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 bg-white/60 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-200 dark:focus:ring-slate-700 backdrop-blur-sm transition-all ${title ? style.accent : ''}`}
             />
-
-            {/* KOLOM ISI JURNAL */}
             <div className='relative flex-1'>
               <div className='absolute inset-0 pointer-events-none overflow-hidden rounded-2xl'>
                 {[...Array(15)].map((_, i) => (
@@ -295,57 +247,25 @@ export default function WriteJournal() {
                   />
                 ))}
               </div>
-
               <textarea
                 ref={textareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder='Mulai ketik di sini... Jangan takut, tulisan ini hanya untukmu.'
+                placeholder='Mulai ketik di sini...'
                 className='relative w-full h-full min-h-[320px] lg:min-h-[500px] p-5 text-sm leading-8 text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-600 bg-white/60 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 rounded-2xl resize-none outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-200 dark:focus:ring-slate-700 backdrop-blur-sm transition-all font-medium'
               />
             </div>
-
-            <AnimatePresence>
-              {content.length > 0 && content.length < 50 && (
-                <motion.p
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className='text-[11px] text-slate-400 dark:text-slate-500 mt-2 text-center'
-                >
-                  Terus tulis... 🤍
-                </motion.p>
-              )}
-              {wordCount >= 30 && (
-                <motion.p
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className='text-[11px] text-emerald-500 dark:text-emerald-400 font-semibold mt-2 text-center'
-                >
-                  Alhamdulillah, {wordCount} kata yang jujur! ✨
-                </motion.p>
-              )}
-            </AnimatePresence>
           </div>
         </div>
       </main>
 
-      {/* ── FLOATING SAVE BUTTON ── */}
-      <div className='fixed bottom-0 left-0 right-0 px-5 pb-8 pt-4 bg-gradient-to-t from-[#FAFAF7] dark:from-slate-950 via-[#FAFAF7]/90 dark:via-slate-950/90 to-transparent'>
-        {/* Kontainer dibatasi agar tombol simpannya pas sesuai device */}
-        <div className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto flex lg:justify-end'>
+      <div className='fixed bottom-0 left-0 right-0 px-5 pb-8 pt-4 bg-gradient-to-t from-[#FAFAF7] dark:from-slate-950 via-[#FAFAF7]/90 dark:via-slate-950/90 to-transparent z-10 pointer-events-none'>
+        <div className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto flex lg:justify-end pointer-events-auto'>
           <motion.button
             onClick={handleSave}
             disabled={!canSave}
             whileTap={canSave ? { scale: 0.97 } : {}}
-            className={`w-full lg:w-[350px] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-sm transition-all ${
-              saved
-                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-950'
-                : canSave
-                  ? `bg-gradient-to-r ${style.gradient} text-white shadow-lg`
-                  : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
-            }`}
+            className={`w-full lg:w-[350px] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-sm transition-all ${saved ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-950' : canSave ? `bg-gradient-to-r ${style.gradient} text-white shadow-lg` : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'}`}
             style={
               canSave && !saved
                 ? { boxShadow: `0 12px 32px -8px ${style.shadow}` }
