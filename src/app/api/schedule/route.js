@@ -60,6 +60,7 @@ export async function GET(request) {
           isoDate: itemDate.toISOString(),
           hijri: `${item.date.hijri.day} ${item.date.hijri.month.en} ${item.date.hijri.year}`,
           timings: {
+            // FIX: Gunakan split(' ')[0] untuk membersihkan zona waktu (WIB/WITA/WIT/+08)
             Imsak: item.timings.Imsak.split(' ')[0],
             Subuh: item.timings.Fajr.split(' ')[0],
             Dzuhur: item.timings.Dhuhr.split(' ')[0],
