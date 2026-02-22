@@ -1,65 +1,172 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/id';
+
+import useUser from '@/hooks/useUser';
+import { studyMaterials } from '@/data/studyMaterials';
+import { quotesData } from '@/data/quotes';
+
+import useHijriDate from '@/hooks/useHijriDate';
+import usePrayerTimes from '@/hooks/usePrayerTimes';
+import useHeroMode from '@/hooks/useHeroMode';
+import useNotifications from '@/hooks/useNotifications';
+import useTrackerSummary from '@/hooks/useTrackerSummary';
+
+import HomeHeader from '@/components/Home/HomeHeader';
+import HeroCard from '@/components/Home/HeroCard';
+import DailyGoalTracker from '@/components/Home/DailyGoalTracker';
+import ToolGrid from '@/components/Home/ToolGrid';
+import DailyKnowledge from '@/components/Home/DailyKnowledge';
+import JurnalCard from '@/components/Home/JurnalCard';
+import RamaTalkCard from '@/components/Home/RamaTalkCard';
+import QuoteCard from '@/components/Home/QuoteCard';
+
+import TrackerDrawer from '@/components/TrackerDrawer';
+import ScheduleDrawer from '@/components/ScheduleDrawer';
+import NotificationDrawer from '@/components/NotificationDrawer';
+
+dayjs.locale('id');
+dayjs.extend(relativeTime);
+dayjs.extend(duration);
+
+/**
+ * Halaman Beranda Utama Aplikasi MyRamadhan (App Router)
+ * Bertugas mengoordinasikan seluruh state global untuk dashboard harian
+ */
+export default function MyRamadhanHome() {
+  const router = useRouter();
+  const { user } = useUser();
+
+  const [mounted, setMounted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(dayjs());
+
+  const [isTrackerOpen, setIsTrackerOpen] = useState(false);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  const [quoteOfTheDay, setQuoteOfTheDay] = useState(quotesData[0]);
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  const { hijriDate, hijriDay } = useHijriDate();
+  const { prayerTimes, userCity, fetchPrayerTimes } = usePrayerTimes();
+  const { taskProgress, fetchTrackerSummary } = useTrackerSummary(user, true);
+  const { notifications, hasUnreadNotif, markAsRead } = useNotifications(
+    mounted,
+    hijriDay,
+    prayerTimes,
+    currentTime,
+  );
+
+  const hero = useHeroMode(prayerTimes, currentTime);
+
+  /**
+   * Mengacak kutipan harian dengan animasi jeda
+   */
+  const randomizeQuote = () => {
+    setIsSpinning(true);
+    setTimeout(() => {
+      setQuoteOfTheDay(
+        quotesData[Math.floor(Math.random() * quotesData.length)],
+      );
+      setIsSpinning(false);
+    }, 500);
+  };
+
+  /**
+   * Membuka laci notifikasi dan menandai semua sebagai telah dibaca
+   */
+  const handleOpenNotification = () => {
+    setIsNotificationOpen(true);
+    markAsRead();
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    const timer = setInterval(() => setCurrentTime(dayjs()), 1000);
+    randomizeQuote();
+    fetchPrayerTimes();
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchTrackerSummary();
+    }
+  }, [user]);
+
+  const dailyTopic =
+    studyMaterials.find((m) => m.day === hijriDay) || studyMaterials[0];
+
+  if (!mounted) return null;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 pb-16 selection:bg-blue-200 dark:selection:bg-blue-800 transition-colors duration-300'>
+      {/* SECTION: BACKGROUND DECORATION */}
+      <div className='fixed inset-0 -z-10 pointer-events-none overflow-hidden'>
+        <div className='absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/50 dark:bg-blue-900/20 rounded-full blur-3xl opacity-60' />
+        <div className='absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-indigo-100/50 dark:bg-indigo-900/20 rounded-full blur-3xl opacity-60' />
+      </div>
+
+      {/* SECTION: MAIN CONTENT CONTAINER */}
+      <div className='w-full max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto p-5 md:py-8 lg:py-10 lg:px-8'>
+        <HomeHeader
+          user={user}
+          hijriDate={hijriDate}
+          hasUnreadNotif={hasUnreadNotif}
+          onOpenNotification={handleOpenNotification}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <div className='flex flex-col lg:flex-row gap-5 md:gap-6 lg:gap-8 animate-fadeUp'>
+          {/* SECTION: LEFT COLUMN (HERO & TOOLS) */}
+          <div className='flex-1 flex flex-col gap-5 md:gap-6 lg:gap-6'>
+            <HeroCard
+              hero={hero}
+              userCity={userCity}
+              onOpenSchedule={() => setIsScheduleOpen(true)}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <DailyGoalTracker
+              taskProgress={taskProgress}
+              onClick={() => setIsTrackerOpen(true)}
+            />
+            <ToolGrid />
+          </div>
+
+          {/* SECTION: RIGHT COLUMN (CARDS) */}
+          <div className='w-full lg:w-[350px] xl:w-[380px] flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:flex lg:flex-col gap-5 md:gap-6 lg:gap-6'>
+            <DailyKnowledge hijriDay={hijriDay} dailyTopic={dailyTopic} />
+            <JurnalCard user={user} />
+            <RamaTalkCard />
+            <QuoteCard
+              quote={quoteOfTheDay}
+              isSpinning={isSpinning}
+              onRefresh={randomizeQuote}
+            />
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+
+      {/* SECTION: DRAWERS */}
+      <TrackerDrawer
+        isOpen={isTrackerOpen}
+        onClose={() => setIsTrackerOpen(false)}
+        onUpdate={fetchTrackerSummary}
+      />
+      <ScheduleDrawer
+        isOpen={isScheduleOpen}
+        onClose={() => setIsScheduleOpen(false)}
+        onUpdate={fetchPrayerTimes}
+      />
+      <NotificationDrawer
+        isOpen={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
+        notifications={notifications}
+      />
+    </main>
   );
 }
