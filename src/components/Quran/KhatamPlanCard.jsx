@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useKhatamPlan } from '@/hooks/useKhatamPlan';
 
-export default function KhatamPlanCard() {
+export default function KhatamPlanCard({ onResetLastRead }) {
   const { khatamPlan, stats, createPlan, removePlan } = useKhatamPlan();
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [targetDays, setTargetDays] = useState(30);
@@ -30,10 +30,23 @@ export default function KhatamPlanCard() {
     setIsSetupOpen(false);
   };
 
-  // Fungsi untuk reset khatam sekaligus menghapus last read
-  const handleResetAll = () => {
+  // Fungsi untuk reset target dari tombol atas (MENGGUNAKAN KONFIRMASI)
+  const handleResetTarget = () => {
+    const isConfirmed = window.confirm(
+      'Apakah kamu yakin ingin mereset target khatam dan menghapus riwayat terakhir dibaca?',
+    );
+    if (isConfirmed) {
+      removePlan();
+      setShowCongrats(false);
+      if (onResetLastRead) onResetLastRead();
+    }
+  };
+
+  // Fungsi untuk menyelesaikan program dari modal khatam (TANPA KONFIRMASI KARENA SUDAH SELESAI)
+  const handleFinishKhatam = () => {
     removePlan();
     setShowCongrats(false);
+    if (onResetLastRead) onResetLastRead();
   };
 
   // === RENDER JIKA BELUM ADA PROGRAM ===
@@ -97,7 +110,7 @@ export default function KhatamPlanCard() {
           Progres Khatam
         </h3>
         <button
-          onClick={handleResetAll}
+          onClick={handleResetTarget}
           className='text-xs font-medium text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors'
         >
           Reset Target
@@ -167,7 +180,7 @@ export default function KhatamPlanCard() {
         </p>
       </div>
 
-      {/* MODAL KHATAM */}
+      {/* MODAL KHATAM (Muncul jika progress mencapai 100%) */}
       {showCongrats && (
         <div className='fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm'>
           <div className='bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center border border-slate-100 dark:border-slate-800 relative animate-in zoom-in-95 duration-300'>
@@ -189,7 +202,7 @@ export default function KhatamPlanCard() {
               akhir kelak.
             </p>
             <button
-              onClick={handleResetAll}
+              onClick={handleFinishKhatam}
               className='w-full py-3.5 bg-[#2563eb] dark:bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20'
             >
               Selesai & Mulai Ulang

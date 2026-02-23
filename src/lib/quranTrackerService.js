@@ -65,7 +65,15 @@ export const setKhatamProgress = (absoluteAyahCount) => {
     window.dispatchEvent(new Event('khatam_plan_updated'));
   }
 };
-
+export const updateKhatamProgress = (ayatCount) => {
+  if (!isBrowser) return;
+  const plan = getKhatamPlan();
+  if (plan) {
+    plan.progressAyat = Math.min(6236, (plan.progressAyat || 0) + ayatCount);
+    localStorage.setItem('quran_khatam_plan', JSON.stringify(plan));
+    window.dispatchEvent(new Event('khatam_plan_updated'));
+  }
+};
 export const clearKhatamPlan = () => {
   if (!isBrowser) return;
   localStorage.removeItem('quran_khatam_plan');

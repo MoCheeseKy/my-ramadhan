@@ -9,9 +9,12 @@ import {
   Book,
   Bookmark,
   BarChart2,
+  AlertCircle,
+  X,
 } from 'lucide-react';
 import useUser from '@/hooks/useUser';
 import useQuranStorage from '@/hooks/useQuranStorage';
+import { getReadingHistory } from '@/lib/quranTrackerService';
 import LastReadBanner from '@/components/Quran/LastReadBanner';
 import BookmarkCard from '@/components/Quran/BookmarkCard';
 
@@ -25,7 +28,6 @@ const TABS = [
 
 const JUZ_LIST = Array.from({ length: 30 }, (_, i) => i + 1);
 
-// Function untuk mengelola halaman utama Quran
 export default function QuranIndex() {
   const router = useRouter();
   const { user } = useUser();
@@ -42,12 +44,8 @@ export default function QuranIndex() {
   const [bookmarks, setBookmarks] = useState([]);
 
   const [isHeatmapOpen, setIsHeatmapOpen] = useState(false);
-  const [isKhatam, setIsKhatam] = useState(false);
+  const [reminderData, setReminderData] = useState(null);
 
-  const [readPages, setReadPages] = useState([]);
-  const [readDays, setReadDays] = useState([]);
-
-  // Function untuk mengambil daftar surah
   useEffect(() => {
     const fetchSurahs = async () => {
       try {
@@ -64,34 +62,44 @@ export default function QuranIndex() {
     fetchSurahs();
   }, []);
 
-  // Function untuk memuat data lokal dan mereset statistik heatmap jika berganti bulan
   useEffect(() => {
     const loadData = async () => {
       const data = await storage.loadQuranData();
       if (data.lastRead) setLastRead(data.lastRead);
       if (data.bookmarks) setBookmarks(data.bookmarks);
-      if (data.readPages) setReadPages(data.readPages);
-
-      const currentMonth = new Date().getMonth();
-      if (data.lastSavedMonth !== currentMonth) {
-        setReadDays([]);
-      } else if (data.readDays) {
-        setReadDays(data.readDays);
-      }
     };
     loadData();
+
+    // Kalkulasi Banner Pengingat 3 Hari
+    const history = getReadingHistory() || {};
+    let totalSecs3Days = 0;
+    let metTargetAnyDay = false;
+    const today = new Date();
+
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - i,
+        12,
+        0,
+        0,
+      );
+      const dateStr = d.toISOString().split('T')[0];
+      const secs = history[dateStr] || 0;
+
+      totalSecs3Days += secs;
+      if (secs >= 180) metTargetAnyDay = true; // Minimal baca 3 menit
+    }
+
+    const avgSeconds = Math.floor(totalSecs3Days / 3);
+
+    // Munculkan peringatan JIKA dalam 3 hari tidak ada yg melebihi 3 menit
+    if (!metTargetAnyDay) {
+      setReminderData({ avgSeconds });
+    }
   }, [user]);
 
-  // Function untuk mengecek status khatam berdasarkan total 604 halaman
-  useEffect(() => {
-    if (readPages.length === 604) {
-      setIsKhatam(true);
-    } else {
-      setIsKhatam(false);
-    }
-  }, [readPages]);
-
-  // Function untuk mencari surah atau redirect ke juz
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearchQuery(val);
@@ -104,17 +112,22 @@ export default function QuranIndex() {
     }
   };
 
-  // Function untuk menghapus data terakhir dibaca
   const handleResetLastRead = async () => {
     await storage.saveLastRead(null);
     setLastRead(null);
   };
 
-  // Function untuk mereset seluruh progress khatam dan terakhir dibaca
+  // Function untuk mereset progress dan menghapus tanda terakhir dibaca saat khatam
   const handleFullReset = async () => {
-    setReadPages([]);
-    setIsKhatam(false);
-    await handleResetLastRead();
+    const isConfirmed = window.confirm(
+      'Apakah kamu yakin ingin mereset seluruh progress membaca dan menghapus riwayat terakhir dibaca?',
+    );
+
+    if (isConfirmed) {
+      setReadPages([]);
+      setIsKhatam(false);
+      await handleResetLastRead();
+    }
   };
 
   const filteredSurahs = surahs.filter(
@@ -123,7 +136,6 @@ export default function QuranIndex() {
       s.arti.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  // Function untuk menghapus bookmark
   const handleRemoveBookmark = async (bookmarkToRemove) => {
     const newBookmarks = bookmarks.filter(
       (b) =>
@@ -133,10 +145,10 @@ export default function QuranIndex() {
         ),
     );
     setBookmarks(newBookmarks);
-    await storage.saveBookmarks(newBookmarks);
+
+    await storage.saveBookmarksData(newBookmarks);
   };
 
-  // Function untuk melanjutkan bacaan dari banner
   const handleContinue = () => {
     if (!lastRead) return;
     const url = lastRead.isJuz
@@ -147,7 +159,14 @@ export default function QuranIndex() {
 
   const isSearching = searchQuery.trim().length > 0;
 
+  // Formatter waktu untuk banner pengingat
+  const formatAvgTime = (secs) => {
+    if (secs < 60) return `${secs} detik`;
+    return `${Math.floor(secs / 60)} menit`;
+  };
+
   if (view === 'bookmarks') {
+    // ... Bagian Bookmarks sama seperti kode aslimu ...
     return (
       <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 pb-20'>
         <header className='sticky top-0 z-40 bg-white/80 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800'>
@@ -273,17 +292,45 @@ export default function QuranIndex() {
       </header>
 
       <main className='max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto p-5 md:py-6 lg:py-8 lg:px-6'>
+        {/* BANNER PENGINGAT 3 HARI */}
+        {!isSearching && reminderData && (
+          <div className='bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl p-4 mb-5 flex items-start gap-3 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm'>
+            <div className='p-2 bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl shrink-0'>
+              <AlertCircle size={20} />
+            </div>
+            <div className='pr-6'>
+              <h3 className='font-bold text-amber-800 dark:text-amber-200 text-sm mb-1'>
+                Jangan Lupa Sempatkan Waktu Ya!
+              </h3>
+              <p className='text-xs text-amber-700/90 dark:text-amber-300/90 leading-relaxed font-medium'>
+                Dalam 3 hari kebelakang, rata-rata bacamu hanya{' '}
+                <strong>{formatAvgTime(reminderData.avgSeconds)}</strong>.
+                {reminderData.avgSeconds < 60
+                  ? ' Yuk, sempatkan tilawah hari ini meski hanya satu ayat, insyaAllah berkah. Semangat!'
+                  : ' Kelihatannya kamu lagi sibuk ya? Sempatkan waktu sedikit hari ini buat tilawah yuk!'}
+              </p>
+            </div>
+            <button
+              onClick={() => setReminderData(null)}
+              className='absolute top-3 right-3 p-1 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-500/30 rounded-lg transition-colors'
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {!isSearching && (
-          <div className='flex flex-col md:flex-row items-stretch gap-4 lg:gap-5 mb-5 lg:mb-6 mt-4'>
+          <div className='flex flex-col md:flex-row items-stretch gap-4 lg:gap-5 mb-5 lg:mb-6 mt-2'>
             <div className='w-full md:w-4/12 flex [&>*]:w-full [&>*]:h-full'>
               <LastReadBanner lastRead={lastRead} onContinue={handleContinue} />
             </div>
             <div className='w-full md:w-8/12 flex [&>*]:w-full [&>*]:h-full'>
-              <KhatamPlanCard />
+              <KhatamPlanCard onResetLastRead={handleResetLastRead} />
             </div>
           </div>
         )}
 
+        {/* ... TAB SURAH & JUZ (Kodenya 100% sama dengan milikmu sebelumnya) ... */}
         {activeTab === 'surah' && (
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4'>
             {loading ? (
@@ -351,31 +398,7 @@ export default function QuranIndex() {
       <HeatmapStatsDrawer
         isOpen={isHeatmapOpen}
         onClose={() => setIsHeatmapOpen(false)}
-        readDays={readDays}
       />
-
-      {isKhatam && (
-        <>
-          <div className='fixed inset-0 bg-black/50 dark:bg-black/70 z-50 transition-opacity backdrop-blur-sm' />
-          <div className='fixed z-50 bg-white dark:bg-slate-900 w-full bottom-0 left-0 p-6 rounded-t-2xl md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-sm md:rounded-2xl shadow-xl transition-all border border-slate-100 dark:border-slate-800'>
-            <div className='flex justify-center mb-4 md:hidden'>
-              <div className='w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full' />
-            </div>
-            <h2 className='text-2xl font-bold mb-2 text-green-600 dark:text-green-500 text-center'>
-              Alhamdulillah!
-            </h2>
-            <p className='mb-6 text-slate-700 dark:text-slate-300 text-center text-sm md:text-base'>
-              Selamat, Anda telah khatam menyelesaikan bacaan Al-Quran.
-            </p>
-            <button
-              onClick={handleFullReset}
-              className='w-full bg-green-600 text-white px-4 py-3 md:py-2 rounded-xl hover:bg-green-700 transition-colors font-bold shadow-sm hover:shadow-md'
-            >
-              Reset Progress & Hapus Terakhir Dibaca
-            </button>
-          </div>
-        </>
-      )}
     </div>
   );
 }

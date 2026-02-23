@@ -2,13 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, EyeOff } from 'lucide-react';
+import {
+  ArrowLeft,
+  EyeOff,
+  X,
+  Trophy,
+  BookOpen,
+  CheckCircle2,
+} from 'lucide-react';
 
 import useUser from '@/hooks/useUser';
 import useReaderSettings from '@/store/useReaderSettings';
 import useQuranStorage from '@/hooks/useQuranStorage';
 import useReaderActions from '@/store/useReaderActions';
 import { useQuranTracker } from '@/hooks/useQuranTracker';
+import { useKhatamPlan } from '@/hooks/useKhatamPlan';
+import { calculateAbsoluteAyah } from '@/lib/quranTrackerService';
 import { JUZ_MAPPING } from '@/data/juzMapping';
 
 import JuzHeader from '@/components/Quran/JuzHeader';
@@ -38,6 +47,16 @@ export default function JuzReader() {
   const [bookmarks, setBookmarks] = useState([]);
   const [lastRead, setLastRead] = useState(null);
 
+  // Hook Khatam Plan untuk melihat status bacaan
+  const { stats } = useKhatamPlan();
+
+  // State untuk mengontrol Modal Selesai Membaca & Doa
+  const [showSessionEnd, setShowSessionEnd] = useState(false);
+  const [sessionEndData, setSessionEndData] = useState({
+    isKhatam: false,
+    targetMet: false,
+  });
+
   const allAyatFlat = juzSurahs.flatMap((s) =>
     s.ayat.map((a) => ({ ...a, surahId: s.surahId, surahName: s.namaLatin })),
   );
@@ -55,7 +74,7 @@ export default function JuzReader() {
     bookmarks,
     setBookmarks,
     setLastRead,
-    lastReadData: lastRead, // <-- Ditambahkan agar progress khatam terhitung
+    lastReadData: lastRead,
     isJuzMode: true,
   });
 
@@ -159,6 +178,20 @@ export default function JuzReader() {
     }
   };
 
+  // Wrapper untuk menangkap aksi Last Read di halaman Juz
+  const handleMarkLastRead = (ayat, surahId, surahName) => {
+    handleLastRead(ayat, surahId, surahName, { juzNumber: Number(number) });
+
+    const absoluteAyah = calculateAbsoluteAyah(surahId, ayat.nomorAyat);
+    const isKhatam = absoluteAyah >= 6236;
+
+    // Cek apakah target harian khatam terpenuhi
+    const met = stats?.status === 'ON_TRACK' || stats?.status === 'AHEAD';
+
+    setSessionEndData({ isKhatam, targetMet: met });
+    setShowSessionEnd(true);
+  };
+
   return (
     <div
       className='min-h-screen bg-[#F6F9FC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 selection:bg-blue-200 dark:selection:bg-blue-900'
@@ -246,9 +279,7 @@ export default function JuzReader() {
                       handleBookmark(a, surah.surahId, surah.namaLatin)
                     }
                     onLastRead={(a) =>
-                      handleLastRead(a, surah.surahId, surah.namaLatin, {
-                        juzNumber: Number(number),
-                      })
+                      handleMarkLastRead(a, surah.surahId, surah.namaLatin)
                     }
                     onCopy={(a, name) => handleCopy(a, name, surah.surahId)}
                     onPlayAudio={(a) =>
@@ -282,6 +313,85 @@ export default function JuzReader() {
           </div>
         )}
       </main>
+
+      {/* POPUP MODAL SESI MEMBACA SELESAI */}
+      {showSessionEnd && (
+        <div className='fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm'>
+          <div className='bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center border border-slate-100 dark:border-slate-800 relative animate-in zoom-in-95 duration-300'>
+            <button
+              onClick={() => setShowSessionEnd(false)}
+              className='absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors'
+            >
+              <X size={20} />
+            </button>
+
+            {/* Bagian Header: Pengecekan Khatam */}
+            {sessionEndData.isKhatam ? (
+              <>
+                <div className='w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner'>
+                  <Trophy size={40} className='text-amber-500' />
+                </div>
+                <h2 className='text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2'>
+                  Alhamdulillah, Khatam!
+                </h2>
+                <p className='text-slate-500 dark:text-slate-400 text-sm mb-4 leading-relaxed'>
+                  MasyaAllah, kamu telah menyelesaikan bacaan seluruh Al-Qur'an.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className='w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner'>
+                  <BookOpen
+                    size={40}
+                    className='text-[#2563eb] dark:text-blue-400'
+                  />
+                </div>
+                <h2 className='text-xl font-bold text-slate-800 dark:text-slate-100 mb-2'>
+                  Batas Bacaan Disimpan
+                </h2>
+              </>
+            )}
+
+            {/* Banner Target Terpenuhi */}
+            {sessionEndData.targetMet && !sessionEndData.isKhatam && (
+              <div className='bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400 text-xs font-bold px-3 py-2 rounded-xl mb-4 inline-flex items-center gap-1.5 shadow-sm'>
+                <CheckCircle2 size={16} /> Target Khatam Harianmu Terpenuhi!
+              </div>
+            )}
+
+            {/* Doa Setelah Membaca Al-Quran */}
+            <div className='bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 md:p-5 text-left border border-slate-100 dark:border-slate-700 mb-5 relative overflow-hidden'>
+              <p className='text-[10px] md:text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider text-center flex items-center justify-center gap-2'>
+                <span className='w-6 md:w-8 h-px bg-slate-200 dark:bg-slate-700'></span>
+                Doa Setelah Membaca Al-Quran
+                <span className='w-6 md:w-8 h-px bg-slate-200 dark:bg-slate-700'></span>
+              </p>
+              <p className='font-arabic text-xl md:text-2xl text-right leading-loose text-[#2563eb] dark:text-blue-400 mb-3 mt-1'>
+                اللَّهُمَّ ارْحَمْنِي بِالْقُرْآنِ وَاجْعَلْهُ لِي إِمَامًا
+                وَنُورًا وَهُدًى وَرَحْمَةً
+              </p>
+              <p className='text-xs text-slate-600 dark:text-slate-300 italic mb-2 leading-relaxed font-medium'>
+                "Allahummarhamni bil quran, waj'alhu li imaman wa nuran wa hudan
+                wa rohmah."
+              </p>
+              <p className='text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed'>
+                "Ya Allah, rahmatilah aku dengan Al-Qur'an. Jadikanlah ia
+                sebagai pemimpin, cahaya, petunjuk, dan rahmat bagiku."
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowSessionEnd(false);
+                router.push('/quran');
+              }}
+              className='w-full py-3.5 bg-[#2563eb] dark:bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-sm'
+            >
+              Selesai & Tutup
+            </button>
+          </div>
+        </div>
+      )}
 
       {showPlayer && audioInfo && (
         <AudioPlayer
