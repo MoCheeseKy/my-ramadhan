@@ -31,7 +31,7 @@ const JUZ_LIST = Array.from({ length: 30 }, (_, i) => i + 1);
 export default function QuranIndex() {
   const router = useRouter();
   const { user } = useUser();
-  const storage = useQuranStorage(user);
+  const storage = useQuranStorage();
 
   const [view, setView] = useState('home');
   const [activeTab, setActiveTab] = useState('surah');
@@ -70,7 +70,6 @@ export default function QuranIndex() {
     };
     loadData();
 
-    // Kalkulasi Banner Pengingat 3 Hari
     const history = getReadingHistory() || {};
     let totalSecs3Days = 0;
     let metTargetAnyDay = false;
@@ -89,12 +88,11 @@ export default function QuranIndex() {
       const secs = history[dateStr] || 0;
 
       totalSecs3Days += secs;
-      if (secs >= 180) metTargetAnyDay = true; // Minimal baca 3 menit
+      if (secs >= 180) metTargetAnyDay = true;
     }
 
     const avgSeconds = Math.floor(totalSecs3Days / 3);
 
-    // Munculkan peringatan JIKA dalam 3 hari tidak ada yg melebihi 3 menit
     if (!metTargetAnyDay) {
       setReminderData({ avgSeconds });
     }
@@ -117,19 +115,6 @@ export default function QuranIndex() {
     setLastRead(null);
   };
 
-  // Function untuk mereset progress dan menghapus tanda terakhir dibaca saat khatam
-  const handleFullReset = async () => {
-    const isConfirmed = window.confirm(
-      'Apakah kamu yakin ingin mereset seluruh progress membaca dan menghapus riwayat terakhir dibaca?',
-    );
-
-    if (isConfirmed) {
-      setReadPages([]);
-      setIsKhatam(false);
-      await handleResetLastRead();
-    }
-  };
-
   const filteredSurahs = surahs.filter(
     (s) =>
       s.namaLatin.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -145,7 +130,6 @@ export default function QuranIndex() {
         ),
     );
     setBookmarks(newBookmarks);
-
     await storage.saveBookmarksData(newBookmarks);
   };
 
@@ -159,14 +143,12 @@ export default function QuranIndex() {
 
   const isSearching = searchQuery.trim().length > 0;
 
-  // Formatter waktu untuk banner pengingat
   const formatAvgTime = (secs) => {
     if (secs < 60) return `${secs} detik`;
     return `${Math.floor(secs / 60)} menit`;
   };
 
   if (view === 'bookmarks') {
-    // ... Bagian Bookmarks sama seperti kode aslimu ...
     return (
       <div className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 pb-20'>
         <header className='sticky top-0 z-40 bg-white/80 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800'>
@@ -319,6 +301,7 @@ export default function QuranIndex() {
           </div>
         )}
 
+        {/* CONTAINER LAST READ & KHATAM PLAN */}
         {!isSearching && (
           <div className='flex flex-col md:flex-row items-stretch gap-4 lg:gap-5 mb-5 lg:mb-6 mt-2'>
             <div className='w-full md:w-4/12 flex [&>*]:w-full [&>*]:h-full'>
@@ -330,7 +313,7 @@ export default function QuranIndex() {
           </div>
         )}
 
-        {/* ... TAB SURAH & JUZ (Kodenya 100% sama dengan milikmu sebelumnya) ... */}
+        {/* TAB SURAH */}
         {activeTab === 'surah' && (
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4'>
             {loading ? (
@@ -375,6 +358,7 @@ export default function QuranIndex() {
           </div>
         )}
 
+        {/* TAB JUZ */}
         {activeTab === 'juz' && (
           <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4'>
             {JUZ_LIST.map((juz) => (
