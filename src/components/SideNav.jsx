@@ -17,6 +17,7 @@ import {
   Droplets,
   ScrollText,
   Scale,
+  HandCoins,
 } from 'lucide-react';
 
 export default function SideNav() {
@@ -50,15 +51,15 @@ export default function SideNav() {
         path: '/tracker-kalender',
         icon: CalendarDays,
         label: 'Ramadhan Tracker',
-        activeColor: 'text-orange-500 dark:text-orange-400',
-        bgHover: 'hover:bg-orange-50 dark:hover:bg-orange-900/30',
+        activeColor: 'text-[#1e3a8a] dark:text-blue-400',
+        bgHover: 'hover:bg-blue-50 dark:hover:bg-blue-900/30',
       },
       {
         path: '/jurnal',
         icon: Pen,
         label: 'Jurnal Syukur',
-        activeColor: 'text-teal-600 dark:text-teal-400',
-        bgHover: 'hover:bg-teal-50 dark:hover:bg-teal-900/30',
+        activeColor: 'text-[#1e3a8a] dark:text-blue-400',
+        bgHover: 'hover:bg-blue-50 dark:hover:bg-blue-900/30',
       },
     ],
     [
@@ -66,8 +67,8 @@ export default function SideNav() {
         path: '/quran',
         icon: BookOpen,
         label: "Al-Qur'an",
-        activeColor: 'text-indigo-600 dark:text-indigo-400',
-        bgHover: 'hover:bg-indigo-50 dark:hover:bg-indigo-900/30',
+        activeColor: 'text-[#1e3a8a] dark:text-blue-400',
+        bgHover: 'hover:bg-blue-50 dark:hover:bg-blue-900/30',
       },
       {
         path: '/doa',
@@ -96,8 +97,8 @@ export default function SideNav() {
         path: '/kompas',
         icon: Compass,
         label: 'Arah Kiblat',
-        activeColor: 'text-amber-600 dark:text-amber-400',
-        bgHover: 'hover:bg-amber-50 dark:hover:bg-amber-900/30',
+        activeColor: 'text-indigo-600 dark:text-indigo-400',
+        bgHover: 'hover:bg-indigo-50 dark:hover:bg-indigo-900/30',
       },
       {
         path: '/tasbih',
@@ -108,7 +109,7 @@ export default function SideNav() {
       },
       {
         path: '/zakat',
-        icon: Fingerprint,
+        icon: HandCoins,
         label: 'Zakat Digital',
         activeColor: 'text-yellow-600 dark:text-yellow-400',
         bgHover: 'hover:bg-yellow-50 dark:hover:bg-yellow-900/30',
@@ -126,15 +127,15 @@ export default function SideNav() {
         path: '/ramatalk',
         icon: MessageCircle,
         label: 'RamaTalk AI',
-        activeColor: 'text-blue-500 dark:text-blue-400',
+        activeColor: 'text-[#1e3a8a] dark:text-blue-400',
         bgHover: 'hover:bg-blue-50 dark:hover:bg-blue-900/30',
       },
       {
         path: '/user',
         icon: User,
         label: 'Profil & Pengaturan',
-        activeColor: 'text-slate-700 dark:text-slate-300',
-        bgHover: 'hover:bg-slate-100 dark:hover:bg-slate-800',
+        activeColor: 'text-[#1e3a8a] dark:text-blue-400',
+        bgHover: 'hover:bg-blue-50 dark:hover:bg-blue-900/30',
       },
     ],
   ];

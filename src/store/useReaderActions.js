@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 import useQuranStorage from '@/hooks/useQuranStorage';
+import {
+  setKhatamProgress,
+  calculateAbsoluteAyah,
+} from '@/lib/quranTrackerService';
 
 const useReaderActions = ({
   bookmarks,
@@ -11,7 +15,6 @@ const useReaderActions = ({
   surahContext = null,
   isJuzMode = false,
 }) => {
-  // Menggunakan hooks storage lokal yang sudah kita refactor sebelumnya
   const { saveBookmarksData, saveLastRead } = useQuranStorage();
 
   const [copiedId, setCopiedId] = useState(null);
@@ -61,6 +64,14 @@ const useReaderActions = ({
       isJuz: !!juzInfo,
       ...(juzInfo ?? {}),
     };
+
+    // LOGIKA UPDATE ABSOLUT
+    try {
+      const absoluteAyah = calculateAbsoluteAyah(data.surahId, data.ayahNumber);
+      setKhatamProgress(absoluteAyah);
+    } catch (error) {
+      console.error('Gagal update progress khatam:', error);
+    }
 
     setLastRead(data);
     await saveLastRead(data);

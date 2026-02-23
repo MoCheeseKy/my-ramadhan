@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, EyeOff } from 'lucide-react';
 
@@ -9,6 +8,7 @@ import useUser from '@/hooks/useUser';
 import useReaderSettings from '@/store/useReaderSettings';
 import useQuranStorage from '@/hooks/useQuranStorage';
 import useReaderActions from '@/store/useReaderActions';
+import { useQuranTracker } from '@/hooks/useQuranTracker';
 import { JUZ_MAPPING } from '@/data/juzMapping';
 
 import JuzHeader from '@/components/Quran/JuzHeader';
@@ -22,24 +22,22 @@ export default function JuzReader() {
   const { number } = useParams();
   const { user } = useUser();
 
-  // ─── Data ─────────────────────────────────────────────────────────────────
+  useQuranTracker(true);
+
   const [juzSurahs, setJuzSurahs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ─── UI state ─────────────────────────────────────────────────────────────
   const [hafalanMode, setHafalanMode] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [jumpSurah, setJumpSurah] = useState('');
   const [jumpAyat, setJumpAyat] = useState('');
 
-  // ─── Hooks ────────────────────────────────────────────────────────────────
   const { settings, toggleSetting, setArabSize } = useReaderSettings();
   const storage = useQuranStorage();
 
   const [bookmarks, setBookmarks] = useState([]);
   const [lastRead, setLastRead] = useState(null);
 
-  // Flatten semua ayat untuk navigasi audio lintas surah
   const allAyatFlat = juzSurahs.flatMap((s) =>
     s.ayat.map((a) => ({ ...a, surahId: s.surahId, surahName: s.namaLatin })),
   );
@@ -57,10 +55,10 @@ export default function JuzReader() {
     bookmarks,
     setBookmarks,
     setLastRead,
+    lastReadData: lastRead, // <-- Ditambahkan agar progress khatam terhitung
     isJuzMode: true,
   });
 
-  // ─── Fetch juz ─────────────────────────────────────────────────────────────
   const fetchJuz = async (juzNum) => {
     setLoading(true);
     setJuzSurahs([]);
@@ -106,7 +104,6 @@ export default function JuzReader() {
     }
   };
 
-  // ─── Load ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!number) return;
 
@@ -120,18 +117,18 @@ export default function JuzReader() {
     loadData();
   }, [number, user]);
 
-  // Auto-scroll ke anchor hash setelah semua ayat dimuat
   useEffect(() => {
     if (juzSurahs.length > 0 && window.location.hash) {
       const hashId = window.location.hash.replace('#', '');
-      setTimeout(() => {
-        const el = document.getElementById(hashId);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 500);
+      if (hashId) {
+        setTimeout(() => {
+          const el = document.getElementById(hashId);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 500);
+      }
     }
   }, [juzSurahs]);
 
-  // ─── Jump to ayat ──────────────────────────────────────────────────────────
   const handleJump = (e) => {
     e.preventDefault();
     if (!jumpSurah || !jumpAyat) {
@@ -149,7 +146,6 @@ export default function JuzReader() {
     setJumpAyat('');
   };
 
-  // ─── Audio navigation ──────────────────────────────────────────────────────
   const handleAudioNav = (dir) => {
     if (!audioInfo) return;
     const idx = allAyatFlat.findIndex(
@@ -163,13 +159,11 @@ export default function JuzReader() {
     }
   };
 
-  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div
       className='min-h-screen bg-[#F6F9FC] dark:bg-slate-900 text-slate-800 dark:text-slate-100 selection:bg-blue-200 dark:selection:bg-blue-900'
       style={{ paddingBottom: showPlayer ? '160px' : '100px' }}
     >
-      {/* Header sticky */}
       <JuzHeader
         juzNumber={number}
         juzSurahs={juzSurahs}
@@ -189,10 +183,8 @@ export default function JuzReader() {
       />
 
       <main className='max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto p-5 md:py-8 space-y-3 md:space-y-5'>
-        {/* Hero banner juz */}
         <JuzHeroBanner juzNumber={number} juzSurahs={juzSurahs} />
 
-        {/* Banner mode hafalan */}
         {hafalanMode && (
           <div className='bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl px-5 py-4 flex items-center gap-3'>
             <EyeOff
@@ -205,7 +197,6 @@ export default function JuzReader() {
           </div>
         )}
 
-        {/* Skeleton loading */}
         {loading && (
           <div className='space-y-4 md:space-y-6'>
             <div className='h-8 w-48 bg-slate-200 dark:bg-slate-700 animate-pulse rounded-full mx-auto mb-6' />
@@ -218,11 +209,9 @@ export default function JuzReader() {
           </div>
         )}
 
-        {/* Konten ayat per surah */}
         {!loading &&
           juzSurahs.map((surah) => (
             <div key={surah.surahId} className='md:mt-6'>
-              {/* Pemisah nama surah */}
               <SurahSeparator
                 namaArab={surah.nama}
                 namaLatin={surah.namaLatin}
@@ -271,7 +260,6 @@ export default function JuzReader() {
             </div>
           ))}
 
-        {/* Navigasi juz sebelum/sesudah */}
         {!loading && (
           <div className='flex gap-4 md:gap-5 pt-6 md:pt-8'>
             {Number(number) > 1 && (
@@ -295,7 +283,6 @@ export default function JuzReader() {
         )}
       </main>
 
-      {/* Audio player */}
       {showPlayer && audioInfo && (
         <AudioPlayer
           currentAyat={audioInfo.ayat}

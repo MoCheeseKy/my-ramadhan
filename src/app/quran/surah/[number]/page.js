@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, EyeOff } from 'lucide-react';
 
@@ -9,6 +8,7 @@ import useUser from '@/hooks/useUser';
 import useReaderSettings from '@/store/useReaderSettings';
 import useQuranStorage from '@/hooks/useQuranStorage';
 import useReaderActions from '@/store/useReaderActions';
+import { useQuranTracker } from '@/hooks/useQuranTracker';
 
 import SurahHeader from '@/components/Quran/SurahHeader';
 import SurahHeroBanner from '@/components/Quran/SurahHeroBanner';
@@ -20,16 +20,15 @@ export default function SurahReader() {
   const { number } = useParams();
   const { user } = useUser();
 
-  // ─── Data ─────────────────────────────────────────────────────────────────
+  useQuranTracker(true);
+
   const [surah, setSurah] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ─── UI state ─────────────────────────────────────────────────────────────
   const [hafalanMode, setHafalanMode] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [jumpNumber, setJumpNumber] = useState('');
 
-  // ─── Hooks ────────────────────────────────────────────────────────────────
   const { settings, toggleSetting, setArabSize } = useReaderSettings();
   const storage = useQuranStorage();
 
@@ -49,12 +48,12 @@ export default function SurahReader() {
     bookmarks,
     setBookmarks,
     setLastRead,
+    lastReadData: lastRead, // <-- Ditambahkan agar progress khatam terhitung
     surahIdContext: number ? Number(number) : null,
     surahContext: surah,
     isJuzMode: false,
   });
 
-  // ─── Fetch & load ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!number) return;
 
@@ -81,17 +80,19 @@ export default function SurahReader() {
     loadData();
   }, [number, user]);
 
-  // Auto-scroll ke anchor hash setelah data selesai dimuat
+  // FIX: Menggunakan getElementById untuk mencegah error empty selector
   useEffect(() => {
     if (!loading && surah && window.location.hash) {
       setTimeout(() => {
-        const el = document.querySelector(window.location.hash);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const hashId = window.location.hash.replace('#', '');
+        if (hashId) {
+          const el = document.getElementById(hashId);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }, 300);
     }
   }, [loading, surah]);
 
-  // ─── Jump to ayat ──────────────────────────────────────────────────────────
   const handleJumpToNumber = (e) => {
     e.preventDefault();
     const num = parseInt(jumpNumber, 10);
@@ -108,7 +109,6 @@ export default function SurahReader() {
     setJumpNumber('');
   };
 
-  // ─── Audio navigation ──────────────────────────────────────────────────────
   const handleAudioNext = () => {
     if (!surah || !audioInfo) return;
     const idx = surah.ayat.findIndex(
@@ -127,13 +127,11 @@ export default function SurahReader() {
     if (idx > 0) handlePlayAudio(surah.ayat[idx - 1]);
   };
 
-  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div
       className='min-h-screen bg-[#F6F9FC] dark:bg-slate-950 text-slate-800 dark:text-slate-200 selection:bg-blue-200 dark:selection:bg-blue-800 transition-colors duration-300'
       style={{ paddingBottom: showPlayer ? '160px' : '100px' }}
     >
-      {/* Header sticky */}
       <SurahHeader
         surah={surah}
         loading={loading}
@@ -150,10 +148,8 @@ export default function SurahReader() {
       />
 
       <main className='max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto p-5 md:py-8 space-y-4 md:space-y-6 pt-6'>
-        {/* Hero banner surah */}
         {!loading && <SurahHeroBanner surah={surah} />}
 
-        {/* Banner mode hafalan */}
         {hafalanMode && (
           <div className='bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-2xl px-5 py-4 flex items-center gap-3'>
             <EyeOff
@@ -166,7 +162,6 @@ export default function SurahReader() {
           </div>
         )}
 
-        {/* Skeleton loading */}
         {loading &&
           [...Array(5)].map((_, i) => (
             <div
@@ -175,7 +170,6 @@ export default function SurahReader() {
             />
           ))}
 
-        {/* List ayat */}
         {!loading &&
           surah?.ayat?.map((ayat) => (
             <AyatCard
@@ -206,7 +200,6 @@ export default function SurahReader() {
             />
           ))}
 
-        {/* Navigasi surah sebelum/sesudah */}
         {!loading && surah && (
           <div className='flex gap-3 md:gap-5 pt-6 md:pt-8'>
             {surah.suratSebelumnya && (
@@ -239,7 +232,6 @@ export default function SurahReader() {
         )}
       </main>
 
-      {/* Audio player */}
       {showPlayer && audioInfo && (
         <AudioPlayer
           currentAyat={audioInfo.ayat}
